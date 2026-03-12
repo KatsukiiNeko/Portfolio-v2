@@ -73,13 +73,13 @@ prototype-2
 Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/prototype-2.git
+git clone https://github.com/KatsukiiNeko/Tandev.git
 ```
 
 Enter the project folder
 
 ```bash
-cd prototype-2
+cd Tandev
 ```
 
 Open the project
