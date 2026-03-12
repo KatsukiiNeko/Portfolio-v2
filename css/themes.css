@@ -1,0 +1,63 @@
+:root {
+  --primary:        #814DE5;
+  --primary-light:  #a47ef0;
+  --primary-dark:   #5a32b0;
+  --primary-glow:   rgba(129, 77, 229, 0.35);
+
+  --bg-dark:        #0d0d0f;
+  --bg-dark-2:      #131316;
+  --card-dark:      #1a1a1e;
+  --card-dark-2:    #222228;
+  --border-dark:    rgba(255,255,255,0.07);
+  --text-dark:      #e8e8ec;
+  --text-muted-dark:#8888a0;
+
+  --bg-light:       #f4f3f8;
+  --bg-light-2:     #ffffff;
+  --card-light:     #ffffff;
+  --card-light-2:   #f0eeff;
+  --border-light:   rgba(0,0,0,0.08);
+  --text-light:     #14141a;
+  --text-muted-light:#6b6b80;
+
+  --bg:             var(--bg-dark);
+  --bg-2:           var(--bg-dark-2);
+  --card:           var(--card-dark);
+  --card-2:         var(--card-dark-2);
+  --border:         var(--border-dark);
+  --text:           var(--text-dark);
+  --text-muted:     var(--text-muted-dark);
+
+  --radius:         12px;
+  --radius-lg:      20px;
+  --transition:     0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow:         0 8px 32px rgba(0,0,0,0.4);
+  --shadow-sm:      0 2px 12px rgba(0,0,0,0.25);
+}
+
+[data-theme="light"] {
+  --bg:          var(--bg-light);
+  --bg-2:        var(--bg-light-2);
+  --card:        var(--card-light);
+  --card-2:      var(--card-light-2);
+  --border:      var(--border-light);
+  --text:        var(--text-light);
+  --text-muted:  var(--text-muted-light);
+  --shadow:      0 8px 32px rgba(0,0,0,0.1);
+  --shadow-sm:   0 2px 12px rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.04;
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(244, 243, 248, 0.7);
+}
+
+[data-theme="light"] .hero::before {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(129,77,229,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(90,50,176,0.1) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 50% at 80% 20%, rgba(164,126,240,0.12) 0%, transparent 50%);
+}

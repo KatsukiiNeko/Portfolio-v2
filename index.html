@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Katsukii Neko — Graphic Design, Python Development &amp; Web Development portfolio.">
+
+  <title>Katsukii Neko · Portfolio</title>
+
+  <link rel="icon" href="/favicon.ico" sizes="any">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/themes.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+  <link rel="stylesheet" href="/css/hero.css">
+  <link rel="stylesheet" href="/css/sections.css">
+  <link rel="stylesheet" href="/css/components.css">
+</head>
+
+<body>
+  <a href="#main-content" class="skip-to-content">Skip to content</a>
+
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <a href="#hero" class="navbar-brand" aria-label="Katsukii Neko — home">Katsukii Neko</a>
+
+    <ul class="navbar-menu" role="list">
+      <li><a href="#hero"     class="nav-link">Home</a></li>
+      <li><a href="#about"    class="nav-link">About</a></li>
+      <li><a href="#skills"   class="nav-link">Skills</a></li>
+      <li><a href="#projects" class="nav-link">Projects</a></li>
+      <li><a href="#contact"  class="nav-link">Contact</a></li>
+    </ul>
+
+    <div class="navbar-actions">
+      <button class="theme-toggle" aria-label="Toggle colour theme">
+        <i class="fas fa-moon" aria-hidden="true"></i>
+      </button>
+      <button class="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navbar-menu">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main id="main-content">
+
+    <section id="hero" class="hero" aria-label="Introduction">
+
+        <div id="three-container" aria-hidden="true"></div>
+
+        <h1 class="hero-title">
+          Katsukii<br><span>Neko</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Graphic Design &nbsp;·&nbsp; Python Development &nbsp;·&nbsp; Web Development
+        </p>
+
+        <div class="hero-cta">
+          <a href="#projects" class="btn btn-primary">
+            <i class="fas fa-folder-open" aria-hidden="true"></i> View Work
+          </a>
+          <a href="#contact" class="btn btn-ghost">
+            <i class="fas fa-paper-plane" aria-hidden="true"></i> Get in Touch
+          </a>
+        </div>
+      </div>
+
+      <div class="scroll-indicator" aria-hidden="true">
+        <span>Scroll</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
+    </section>
+
+    <section id="about" class="section" aria-labelledby="about-heading">
+      <div class="container">
+        <h2 id="about-heading" class="section-title">About Me</h2>
+        <p class="section-body">
+          My name is Nguyen Phuong Minh Tan, and I am a high school student from Vietnam with a passion for technology and creativity. 
+        As a senior Python and web developer, I create efficient and innovative solutions. I also have experience as a graphic designer, video editor, and colorist, blending technical and artistic skills into my projects
+        </p>
+      </div>
+    </section>
+
+    <section id="skills" class="section" aria-labelledby="skills-heading">
+      <div class="container">
+        <span class="section-label">What I know</span>
+        <h2 id="skills-heading" class="section-title">Skills</h2>
+
+        <div class="skills-container" role="list" aria-label="Skill list">
+          <div class="skill-bar" role="listitem">HTML</div>
+          <div class="skill-bar" role="listitem">CSS</div>
+          <div class="skill-bar" role="listitem">JavaScript</div>
+          <div class="skill-bar" role="listitem">Python</div>
+          <div class="skill-bar" role="listitem">Photoshop</div>
+          <div class="skill-bar" role="listitem">Illustrator</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects" class="section" aria-labelledby="projects-heading">
+      <div class="container">
+        <span class="section-label">What I've built</span>
+        <h2 id="projects-heading" class="section-title">Projects</h2>
+
+        <div class="project-filters" role="group" aria-label="Filter projects">
+          <button class="filter-button active" data-filter="all">All</button>
+          <button class="filter-button" data-filter="design">Design</button>
+          <button class="filter-button" data-filter="python">Python</button>
+          <button class="filter-button" data-filter="web">Web</button>
+          <button class="filter-button" data-filter="javascript">JavaScript</button>
+        </div>
+
+        <div class="projects-container" aria-live="polite" aria-label="Project list"></div>
+      </div>
+    </section>
+
+    <section id="contact" class="section" aria-labelledby="contact-heading">
+      <div class="container">
+        <span class="section-label">Say hello</span>
+        <h2 id="contact-heading" class="section-title">Contact</h2>
+        <p class="section-body">
+          Have a project in mind or just want to chat? Drop me a message
+          and I'll get back to you as soon as possible.
+        </p>
+
+        <form id="contact-form" novalidate aria-label="Contact form">
+          <input  type="text"  name="name"    placeholder="Your name"         required autocomplete="name">
+          <input  type="email" name="email"   placeholder="Your email"        required autocomplete="email">
+          <textarea            name="message" placeholder="Your message…"     required></textarea>
+          <button type="submit">
+            <i class="fas fa-paper-plane" aria-hidden="true"></i> Send Message
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <p>&copy; <span id="currentYear"></span> Katsukii Neko. All rights reserved.</p>
+    <div class="social-links" aria-label="Social media links">
+      <a href="#" aria-label="LinkedIn"  rel="noopener noreferrer" target="_blank"><i class="fab fa-linkedin-in"  aria-hidden="true"></i></a>
+      <a href="#" aria-label="GitHub"    rel="noopener noreferrer" target="_blank"><i class="fab fa-github"       aria-hidden="true"></i></a>
+      <a href="#" aria-label="Twitter"   rel="noopener noreferrer" target="_blank"><i class="fab fa-twitter"      aria-hidden="true"></i></a>
+    </div>
+  </footer>
+
+  <div class="modal" id="project-modal" role="dialog" aria-modal="true" aria-label="Project details">
+    <button class="modal-close" aria-label="Close modal">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+    <div class="modal-content"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"           defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"               defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js"     defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/emailjs-com/3.2.0/email.min.js"       defer></script>
+
+  <script src="/js/three-scene.js" defer></script>
+  <script src="/js/renderpipe.js"  defer></script>
+  <script src="/js/main.js"        defer></script>
+
+</body>
+</html>

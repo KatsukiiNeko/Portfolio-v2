@@ -1,0 +1,25 @@
+{
+    "projects": [
+        {
+            "id": 1,
+            "title": "Project 1",
+            "description": "Description of Project 1",
+            "image": "path/to/image1.jpg",
+            "tags": ["tag1", "tag2"]
+        },
+        {
+            "id": 2,
+            "title": "Project 2",
+            "description": "Description of Project 2",
+            "image": "path/to/image2.jpg",
+            "tags": ["tag2", "tag3"]
+        },
+        {
+            "id": 3,
+            "title": "Project 3",
+            "description": "Description of Project 3",
+            "image": "path/to/image3.jpg",
+            "tags": ["tag1", "tag3"]
+        }
+    ]
+}

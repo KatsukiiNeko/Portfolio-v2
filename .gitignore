@@ -1,0 +1,31 @@
+# System files
+
+.DS_Store
+Thumbs.db
+
+# Editor folders
+
+.vscode/
+.idea/
+
+# Logs
+
+*.log
+
+# Dependency folders
+
+node_modules/
+
+# Environment files
+
+.env
+
+# OS generated files
+
+*.swp
+*~
+
+# Build folders
+
+dist/
+build/
