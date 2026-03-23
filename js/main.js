@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initReveal();
   initBackToTop();
   initSkills();
-  loadProjects();        // renderpipe.js
+  loadProjects();        
   initContact();
-  initHeroThree();       // three-scene.js
+  initHeroThree();       
   setCurrentYear();
   buildAboutStats();
   createBackToTopBtn();
@@ -75,7 +75,6 @@ function initNav() {
         }
       });
 
-      // Navbar glass on scroll
       const navbar = document.querySelector('.navbar');
       if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 20);
     },
@@ -156,9 +155,9 @@ function buildAboutStats() {
   container.appendChild(aboutText);
 
   const stats = [
-    { number: '3+',  label: 'Years Experience' },
-    { number: '20+', label: 'Projects Shipped'  },
-    { number: '10+', label: 'Happy Clients'     },
+    { number: '3+',  label: 'Years Experience'  },
+    { number: '2+', label: 'Projects'           },
+    { number: '10+', label: 'Skills'     },
     { number: '∞',   label: 'Lines of Code'     },
   ];
 
@@ -208,10 +207,9 @@ function initContact() {
     const fd   = new FormData(form);
     const data = Object.fromEntries(fd);
 
-    // EmailJS — replace with your real IDs
     if (typeof emailjs !== 'undefined') {
       emailjs
-        .sendForm('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', form, 'YOUR_PUBLIC_KEY')
+        .sendForm('service_pz2fdyu', 'template_uvhng6k', form, 'LjBRtIHOoZ-hm7eLg')
         .then(() => showFormSuccess(form, data.name))
         .catch(err => {
           console.error('EmailJS error:', err);

@@ -1,14 +1,4 @@
-/* ============================================================
-   renderpipe.js
-   Handles everything project-related:
-     • fallback data
-     • JSON fetch
-     • card DOM construction
-     • filter buttons
-     • project detail modal
-============================================================ */
 
-/* ── Fallback project data ──────────────────────────────── */
 const fallbackProjects = [
   {
     id: 1,
@@ -25,14 +15,6 @@ const fallbackProjects = [
     tags: ['Anime', 'Illustrator', 'Banner'],
     description: 'Stylized banner design with editorial composition and bold type.',
     liveUrl: '#',
-  },
-  {
-    id: 3,
-    title: 'Python Bot',
-    category: 'python',
-    tags: ['Python', 'Discord', 'API'],
-    description: 'Feature-rich Discord bot with slash commands, auto-mod, and music playback.',
-    githubUrl: '#',
   },
   {
     id: 4,
@@ -53,7 +35,6 @@ async function loadProjects() {
     const r = await fetch('projects.json');
     if (r.ok) projects = await r.json();
   } catch (_) {
-    /* network error or file missing — silently use fallback */
   }
 
   window.allProjects = projects;
