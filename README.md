@@ -20,7 +20,7 @@ This project focuses on clean UI architecture, modular styling, and interactive 
 
 ## Preview
 
-[![Portfolio Preview](assets/images/previews.png)](https://your-website-link.com)
+[![Portfolio Preview](assets/images/previews.png)](https://katsukiineko.vercel.app/)
 
 ---
 
@@ -37,7 +37,7 @@ This project focuses on clean UI architecture, modular styling, and interactive 
 ## Project Structure
 
 ```bash
-prototype-2
+Tandev
 │
 ├── index.html
 ├── LICENSE
