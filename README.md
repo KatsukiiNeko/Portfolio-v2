@@ -35,7 +35,7 @@ This project showcases a structured approach to frontend architecture, focusing 
 ## 📁 Project Structure
 
 ```bash
-Tandev
+Portfolio-v2
 │
 ├── index.html
 ├── LICENSE
@@ -70,7 +70,7 @@ Tandev
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/KatsukiiNeko/Tandev.git
+git clone https://github.com/KatsukiiNeko/Portfolio-v2.git
 ```
 
 ### 2. Navigate into the project
