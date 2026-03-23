@@ -209,7 +209,7 @@ function initContact() {
 
     if (typeof emailjs !== 'undefined') {
       emailjs
-        .sendForm('service_pz2fdyu', 'template_uvhng6k', form, 'LjBRtIHOoZ-hm7eLg')
+        .sendForm('service_pz2fdyu', 'template_uvhng6k', form, 'AEO0Oobt1hol0tJye')
         .then(() => showFormSuccess(form, data.name))
         .catch(err => {
           console.error('EmailJS error:', err);
