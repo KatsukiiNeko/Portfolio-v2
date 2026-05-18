@@ -28,18 +28,26 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   user-select: none;
+  flex: 1;
+  min-width: 0;
 }
 
 .navbar-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .navbar-menu {
   display: flex;
   list-style: none;
   gap: 4px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .nav-link {
@@ -95,12 +103,21 @@
     padding: 0 20px;
   }
 
+  .navbar-brand {
+    flex: 1;
+  }
+
+  .navbar-actions {
+    flex: 1;
+  }
+
   .navbar-menu {
     display: none;
     position: absolute;
     top: 68px;
     left: 50%;
-    right: 0;
+    transform: translateX(-50%);
+    width: 100%;
     flex-direction: column;
     background: var(--bg-2);
     border-bottom: 1px solid var(--border);
@@ -108,7 +125,7 @@
     gap: 4px;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    transform: translateX(-50%);
+    align-items: center;
   }
 
   .navbar-menu.active {
@@ -122,5 +139,7 @@
   .nav-link {
     padding: 10px 14px;
     font-size: 15px;
+    width: 100%;
+    text-align: center;
   }
 }
