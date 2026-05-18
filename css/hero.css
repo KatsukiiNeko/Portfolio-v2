@@ -141,3 +141,18 @@
 .scroll-indicator i {
   font-size: 14px;
 }
+
+@media (max-width: 768px) {
+  .hero {
+    padding-top: 24px;
+  }
+
+  #three-container {
+    position: relative;
+    width: 60vw;
+    height: 35vh;
+    max-width: 280px;
+    max-height: 280px;
+    margin: 0 auto;
+  }
+}
