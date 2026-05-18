@@ -27,7 +27,6 @@ const fallbackProjects = [
   },
 ];
 
-/* ── Data loading ────────────────────────────────────────── */
 async function loadProjects() {
   let projects = fallbackProjects;
 
@@ -42,7 +41,6 @@ async function loadProjects() {
   initFilters();
 }
 
-/* ── Card rendering ──────────────────────────────────────── */
 function renderProjects(projects) {
   const grid = document.querySelector('.projects-container');
   if (!grid) return;
@@ -53,7 +51,6 @@ function renderProjects(projects) {
     card.style.animationDelay = `${i * 0.07}s`;
     grid.appendChild(card);
 
-    // Trigger animate-in on next frame so the delay actually fires
     requestAnimationFrame(() => card.classList.add('animate-in'));
   });
 }
@@ -64,7 +61,6 @@ function buildProjectCard(project) {
   card.dataset.category = project.category || '';
   card.dataset.tags     = (project.tags || []).join(',').toLowerCase();
 
-  /* --- image / placeholder --- */
   const imgWrap = document.createElement('div');
   imgWrap.className = 'image-container';
   imgWrap.addEventListener('click', () => openProjectModal(project));
@@ -86,7 +82,6 @@ function buildProjectCard(project) {
         font-size:32px;opacity:0.4">🖼</div>`;
   }
 
-  /* --- text content --- */
   const content = document.createElement('div');
   content.className = 'project-content';
 
@@ -106,7 +101,6 @@ function buildProjectCard(project) {
     tagsDiv.appendChild(span);
   });
 
-  /* --- links --- */
   const links = document.createElement('div');
   links.className = 'project-links';
 
@@ -124,7 +118,6 @@ function buildProjectCard(project) {
   return card;
 }
 
-/** Small helper — avoids repeating anchor boilerplate. */
 function _makeLink(href, html) {
   const a = document.createElement('a');
   a.href      = href;
@@ -135,7 +128,6 @@ function _makeLink(href, html) {
   return a;
 }
 
-/* ── Filter buttons ──────────────────────────────────────── */
 function initFilters() {
   const buttons = document.querySelectorAll('.filter-button');
 
@@ -159,7 +151,6 @@ function initFilters() {
   });
 }
 
-/* ── Project modal ───────────────────────────────────────── */
 function openProjectModal(project) {
   const modal   = document.getElementById('project-modal');
   const content = modal?.querySelector('.modal-content');
@@ -197,7 +188,6 @@ function openProjectModal(project) {
   document.body.classList.add('modal-open');
 }
 
-// Close modal — click backdrop or close button
 document.addEventListener('click', e => {
   const modal = document.getElementById('project-modal');
   if (!modal) return;
@@ -207,7 +197,6 @@ document.addEventListener('click', e => {
   }
 });
 
-// Close modal — Escape key
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal.active, #imageModal.active').forEach(m => {

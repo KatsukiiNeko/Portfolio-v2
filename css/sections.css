@@ -392,7 +392,6 @@
   box-shadow: 0 8px 24px var(--primary-glow);
 }
 
-/* Success state injected by JS */
 .form-success {
   text-align: center;
   padding: 32px 0;
@@ -418,9 +417,6 @@
   font-size: 15px;
 }
 
-/* ================================================
-   FOOTER
-================================================ */
 .footer {
   padding: 40px 0 32px;
   text-align: center;

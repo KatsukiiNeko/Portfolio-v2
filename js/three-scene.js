@@ -51,7 +51,6 @@ function initHeroThree() {
   const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 1), wireMat);
   group.add(wire);
 
-  // Outer ring toruses
   const torusMat = new THREE.MeshPhongMaterial({
     color:       0x6E30E3,
     shininess:   60,
