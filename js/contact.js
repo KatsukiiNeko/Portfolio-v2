@@ -3,7 +3,7 @@ function initContact() {
   if (!form) return;
 
   if (typeof emailjs !== 'undefined') {
-    emailjs.init({ publicKey: 'CYnilZhs-1QRVzITw1' });
+    emailjs.init({ publicKey: 'CYnilZhs-1QRVzITw' });
   }
 
   form.addEventListener('submit', e => {
@@ -13,7 +13,7 @@ function initContact() {
 
     if (typeof emailjs !== 'undefined') {
       emailjs
-        .sendForm('service_pz2fdyu', 'template_uvhng6k', form)
+        .sendForm('service_r8x6wci', 'template_m358fzf', form)
         .then(() => showFormSuccess(form, data.name))
         .catch(err => {
           console.error('EmailJS error:', err);
