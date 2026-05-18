@@ -13,7 +13,7 @@ function initContact() {
 
     if (typeof emailjs !== 'undefined') {
       emailjs
-        .sendForm('service_r8x6wci', 'template_m358fzf', form)
+        .sendForm('service_r8x6wci', 'template_38ddqzb', form)
         .then(() => showFormSuccess(form, data.name))
         .catch(err => {
           console.error('EmailJS error:', err);
