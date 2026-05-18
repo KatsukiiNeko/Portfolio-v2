@@ -32,7 +32,7 @@ async function loadProjects() {
   let projects = fallbackProjects;
 
   try {
-    const r = await fetch('projects.json');
+    const r = await fetch('data/projects.json');
     if (r.ok) projects = await r.json();
   } catch (_) {
   }
@@ -197,7 +197,7 @@ function openProjectModal(project) {
   document.body.classList.add('modal-open');
 }
 
-// Close modal — click backdrop or ✕ button
+// Close modal — click backdrop or close button
 document.addEventListener('click', e => {
   const modal = document.getElementById('project-modal');
   if (!modal) return;

@@ -108,7 +108,7 @@
     gap: 4px;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    transform: translateX(50%);
+    transform: translateX(-50%);
   }
 
   .navbar-menu.active {

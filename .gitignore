@@ -1,31 +1,78 @@
-# System files
-
+# =========================
+# SYSTEM FILES
+# =========================
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Editor folders
-
+# =========================
+# EDITORS / IDEs
+# =========================
 .vscode/
 .idea/
-
-# Logs
-
-*.log
-
-# Dependency folders
-
-node_modules/
-
-# Environment files
-
-.env
-
-# OS generated files
-
 *.swp
 *~
 
-# Build folders
+# =========================
+# DEPENDENCIES
+# =========================
+node_modules/
 
+# =========================
+# ENV / SECRETS
+# =========================
+.env
+.env.*
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+secrets.json
+secrets.yml
+secrets.yaml
+
+# =========================
+# LOGS
+# =========================
+*.log
+logs/
+
+# =========================
+# BUILD OUTPUT
+# =========================
 dist/
 build/
+out/
+
+# =========================
+# AI MODELS
+# =========================
+models/
+*.gguf
+*.bin
+*.pt
+*.safetensors
+
+# =========================
+# AI TOOLS / AGENTS
+# =========================
+.openclaude/
+.claude/cache/
+.claude/tmp/
+.claude/logs/
+.claude/sessions/
+CLAUDE.md
+.cursorrules
+.aider*
+.ai/
+copilot-instructions.md
+
+# =========================
+# MEMORY / CACHE FILES
+# =========================
+memory/*.json
+memory/*.log
