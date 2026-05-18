@@ -3,7 +3,7 @@ function initContact() {
   if (!form) return;
 
   if (typeof emailjs !== 'undefined') {
-    emailjs.init('CYnilZhs-1QRVzITw');
+    emailjs.init({ publicKey: 'CYnilZhs-1QRVzITw1' });
   }
 
   form.addEventListener('submit', e => {
