@@ -2,6 +2,10 @@ function initContact() {
   const form = document.getElementById('contact-form');
   if (!form) return;
 
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init('AEO0Oobt1hol0tJye');
+  }
+
   form.addEventListener('submit', e => {
     e.preventDefault();
     const fd   = new FormData(form);
@@ -9,7 +13,7 @@ function initContact() {
 
     if (typeof emailjs !== 'undefined') {
       emailjs
-        .sendForm('service_pz2fdyu', 'template_uvhng6k', form, 'AEO0Oobt1hol0tJye')
+        .sendForm('service_pz2fdyu', 'template_uvhng6k', form)
         .then(() => showFormSuccess(form, data.name))
         .catch(err => {
           console.error('EmailJS error:', err);
