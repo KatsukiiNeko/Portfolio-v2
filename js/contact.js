@@ -12,6 +12,15 @@ function initContact() {
     const data = Object.fromEntries(fd);
 
     if (typeof emailjs !== 'undefined') {
+      let timeField = form.querySelector('input[name="time"]');
+      if (!timeField) {
+        timeField = document.createElement('input');
+        timeField.type = 'hidden';
+        timeField.name = 'time';
+        form.appendChild(timeField);
+      }
+      timeField.value = new Date().toLocaleString();
+
       emailjs
         .sendForm('service_r8x6wci', 'template_kfgnjuq', form)
         .then(() => showFormSuccess(form, data.name))
