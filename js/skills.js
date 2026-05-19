@@ -1,7 +1,6 @@
 function initSkills() {
-  document.querySelectorAll('.skill-bar').forEach(bar => {
-    if (!bar.querySelector('span')) {
-      bar.innerHTML = `<span>${bar.textContent}</span>`;
-    }
+  document.querySelectorAll('.skill-item').forEach(item => {
+    const percent = item.dataset.percent;
+    item.style.setProperty('--skill-percent', percent + '%');
   });
 }

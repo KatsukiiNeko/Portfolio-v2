@@ -1,6 +1,6 @@
 function initReveal() {
   const targets = document.querySelectorAll(
-    '.section-title, .section-body, .stat-card, .skill-bar, .about-text, .about-stats'
+    '.section-title, .section-body, .stat-card, .skill-item, .about-text, .about-stats'
   );
 
   targets.forEach((el, i) => {
