@@ -2,28 +2,29 @@
 const fallbackProjects = [
   {
     id: 1,
-    title: 'Graphic Design #1',
+    title: ' Kaoruko Waguri ',
     category: 'design',
+    image: 'assets/images/Kaoru.png',
     tags: ['Anime', 'Photoshop', 'Illustrator'],
     description: 'Custom anime banner with vibrant artwork and dynamic character illustrations.',
-    liveUrl: '#',
   },
   {
     id: 2,
-    title: 'Graphic Design #2',
+    title: 'Shiina Mahiru',
     category: 'design',
+    image: 'assets/images/shiina.webp',
     tags: ['Anime', 'Illustrator', 'Banner'],
     description: 'Stylized banner design with editorial composition and bold type.',
-    liveUrl: '#',
   },
   {
-    id: 4,
+    id: 3,
     title: 'Portfolio Website',
     category: 'web',
+    image: 'assets/images/web.png',
     tags: ['HTML', 'CSS', 'JavaScript'],
     description: 'Responsive personal portfolio with Three.js hero, dark mode, and project filtering.',
-    liveUrl: '#',
-    githubUrl: '#',
+    liveUrl: 'https://portfolio-umber-omega-rpj2m7tiqj.vercel.app/',
+    githubUrl: 'https://github.com/KatsukiiNeko/',
   },
 ];
 
