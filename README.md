@@ -2,160 +2,275 @@
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5\&logoColor=white\&style=for-the-badge)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3\&logoColor=white\&style=for-the-badge)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript\&logoColor=black\&style=for-the-badge)
-![Three.js](https://img.shields.io/badge/Three.js-000000?logo=three.js\&style=for-the-badge)
-![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?logo=vercel\&style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-In%20Development-orange?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-v2.0-blue?style=for-the-badge)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES2025-F7DF1E?logo=javascript\&logoColor=black\&style=for-the-badge)
+![Three.js](https://img.shields.io/badge/Three.js-r180-000000?logo=three.js\&style=for-the-badge)
+![Architecture](https://img.shields.io/badge/Architecture-Component%20Driven-6C63FF?style=for-the-badge)
+![Responsive](https://img.shields.io/badge/Responsive-Mobile%20First-00C853?style=for-the-badge)
+![Performance](https://img.shields.io/badge/Performance-Optimized-FF6B4A?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
-![Made with Love](https://img.shields.io/badge/Made%20with-Love-ff1493?style=for-the-badge)
 
 ---
 
 ## 🚀 Overview
 
-A modern **interactive web prototype** built with **vanilla HTML, CSS, and JavaScript**, enhanced by **Three.js** for real-time 3D rendering.
+A modern interactive portfolio built with **vanilla HTML, CSS, and JavaScript**, enhanced by **Three.js** for real-time 3D experiences and immersive visual storytelling.
 
-This project demonstrates a structured frontend architecture with a focus on:
+The project focuses on delivering a premium frontend experience through scalable architecture, modern design systems, smooth interactions, and high-performance rendering without relying on heavy frameworks.
 
-* **Scalability**
-* **Modular design**
-* **Immersive user experience**
-
-It serves as both a **portfolio foundation** and an **experimental playground** for advanced UI/UX patterns.
+Designed as both a personal portfolio and a frontend experimentation platform for advanced UI/UX concepts.
 
 ---
 
-## 🔗 Live Preview
+## ✨ Core Features
 
-[![Portfolio Preview](assets/images/previews.png)](https://katsukiineko.vercel.app/)
+### User Experience
 
-> ⚡ Best experienced on desktop browsers
+* 🎨 Dynamic light and dark themes
+* ⚡ Smooth page transitions and micro-interactions
+* 🖱️ Interactive UI components
+* 📱 Fully responsive across desktop, tablet, and mobile
+* ♿ Accessibility-focused navigation and layouts
+
+### Visual Experience
+
+* 🌌 Three.js-powered 3D environment
+* ✨ GPU-accelerated animations
+* 🎭 Motion-driven storytelling
+* 🎯 Context-aware visual effects
+* 🖼️ High-quality visual hierarchy and typography system
+
+### Developer Experience
+
+* 🧩 Modular CSS architecture
+* 📦 Component-based frontend organization
+* 🔄 JSON-driven content management
+* 🛠️ Maintainable project structure
+* 🚀 Framework-free deployment simplicity
 
 ---
 
-## ✨ Key Features
+## 🏗️ Frontend Architecture
 
-* 🧩 **Modular CSS architecture** for long-term scalability
-* 🧱 **Component-based layout system**
-* 🎨 **Dynamic theme switching** (Light / Dark mode)
-* ⚡ **Smooth animations & micro-interactions**
-* 🌐 **Three.js-powered 3D scene integration**
-* 📱 **Responsive design** across devices
+### Design System
+
+| Layer      | Responsibility                       |
+| ---------- | ------------------------------------ |
+| Base       | Global resets, typography, variables |
+| Themes     | Light/Dark design tokens             |
+| Components | Reusable UI building blocks          |
+| Sections   | Page-specific layouts                |
+| Animations | Motion system and interactions       |
+| Utilities  | Shared helper classes                |
+
+### Rendering Pipeline
+
+| Layer             | Purpose                        |
+| ----------------- | ------------------------------ |
+| DOM Layer         | Content and structure          |
+| CSS Layer         | Styling and layout             |
+| Interaction Layer | User events and animations     |
+| Three.js Layer    | Real-time 3D rendering         |
+| Data Layer        | JSON-driven content management |
+
+### Architectural Principles
+
+* Separation of concerns
+* Reusable component patterns
+* Scalable CSS organization
+* Progressive enhancement
+* Performance-first rendering
+* Framework-independent architecture
 
 ---
 
-## 🧠 Architecture Highlights
+## 🎨 UI & UX System
 
-* Separation of concerns between **structure, style, and logic**
-* Reusable UI components for consistent design
-* Lightweight rendering pipeline for performance
-* JSON-driven content system for flexibility
+### Typography
+
+* Fluid typography scaling
+* Responsive heading hierarchy
+* Optimized line height and spacing
+* Improved mobile readability
+
+### Motion Design
+
+* Hardware-accelerated animations
+* Smooth scrolling experiences
+* Micro-interactions for feedback
+* Contextual transition system
+
+### Responsive Strategy
+
+| Device    | Support |
+| --------- | ------- |
+| Mobile    | ✅       |
+| Tablet    | ✅       |
+| Desktop   | ✅       |
+| Ultrawide | ✅       |
+
+---
+
+## ⚡ Performance Focus
+
+### Optimization Techniques
+
+* Lazy-loaded assets
+* Optimized rendering paths
+* Efficient animation loops
+* Minimal runtime overhead
+* Reduced layout shifts
+* GPU-accelerated visual effects
+
+### Performance Goals
+
+* Fast First Contentful Paint
+* Smooth 60 FPS interactions
+* Responsive UI feedback
+* Lightweight bundle footprint
+
+---
+
+## 🧠 Three.js Integration
+
+The portfolio includes a dedicated rendering pipeline for interactive 3D experiences.
+
+### Features
+
+* Real-time scene rendering
+* Dynamic camera movement
+* Interactive scene elements
+* Optimized animation loop
+* Responsive viewport handling
+
+### Rendering Flow
+
+```text
+User Interaction
+       ↓
+Input Manager
+       ↓
+Scene Controller
+       ↓
+Three.js Renderer
+       ↓
+GPU
+       ↓
+Visual Output
+```
+
+---
+
+## ⚙️ Technology Stack
+
+| Category        | Technology         |
+| --------------- | ------------------ |
+| Structure       | HTML5              |
+| Styling         | CSS3               |
+| Logic           | Vanilla JavaScript |
+| 3D Graphics     | Three.js           |
+| Deployment      | Vercel             |
+| Data            | JSON               |
+| Version Control | Git                |
 
 ---
 
 ## 📁 Project Structure
 
 ```bash
-Portfolio-v2
+Portfolio-v2/
 │
 ├── index.html
-├── LICENSE
 ├── README.md
+├── LICENSE
 ├── .gitignore
 │
-├── assets
-│   ├── icons
-│   └── images
+├── assets/
+│   ├── icons/
+│   └── images/
 │
-├── css
-│   ├── base.css        
-│   ├── themes.css      
-│   ├── components.css 
+├── css/
+│   ├── base.css
+│   ├── themes.css
+│   ├── components.css
 │   ├── navbar.css
 │   ├── hero.css
 │   ├── sections.css
 │   └── animations.css
 │
-├── js
-│   ├── main.js         
-│   ├── renderpipe.js   
-│   └── three-scene.js  
+├── js/
+│   ├── main.js
+│   ├── renderpipe.js
+│   └── three-scene.js
 │
-└── data
-    └── projects.json   
+└── data/
+    └── projects.json
 ```
 
 ---
 
-## ⚙️ Getting Started
+## 🚀 Getting Started
 
-### 1. Clone the repository
+### Clone Repository
 
 ```bash
 git clone https://github.com/KatsukiiNeko/Portfolio-v2.git
-```
-
-### 2. Navigate into the project
-
-```bash
 cd Portfolio-v2
 ```
 
-### 3. Run locally
-
-**Option A — Open directly**
+### Local Development
 
 ```bash
-index.html
+python -m http.server 8000
 ```
 
-**Option B — Use a local server (recommended)**
+Open:
+
+```text
+http://localhost:8000
+```
+
+### Deployment
+
+Deploy directly to:
+
+* Vercel
+* Netlify
+* GitHub Pages
+* Cloudflare Pages
+
+No build process required.
+
+## 🤝 Contributing
+
+Contributions, issues, and feature suggestions are welcome.
 
 ```bash
-python -m http.server
+git checkout -b feature/amazing-feature
+git commit -m "Add amazing feature"
+git push origin feature/amazing-feature
 ```
 
----
-
-## 🧪 Tech Stack
-
-* **HTML5** — semantic structure
-* **CSS3** — modular styling & theming
-* **Vanilla JavaScript** — application logic
-* **Three.js** — 3D graphics & rendering
-
----
-
-## 🎯 Development Focus
-
-This project explores:
-
-* Scalable **CSS architecture**
-* Clean **component-driven UI design**
-* High-performance **animation systems**
-* Integration of **3D graphics into modern web interfaces**
-
----
-
-## 📈 Future Improvements
-
-* 🔧 Scene optimization & performance tuning
-* 🎮 More interactive 3D elements
-* 📊 Dynamic content expansion
-* 🌍 Accessibility & SEO improvements
+Open a Pull Request.
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License**.
-See the `LICENSE` file for details.
+MIT License. See `LICENSE` for details.
 
 ---
 
 ## 📄 Copyright
 
-© 2026 KatsukiiNeko. All rights reserved.
+© 2026 Katsukii Neko. All rights reserved.
 
-> *Design. Code. Experience.*
+---
+
+<div align="center">
+
+### ✨ Design First • ⚡ Performance First • 🎨 Experience First
+
+*Crafting interfaces that feel as good as they look.*
+
+</div>
