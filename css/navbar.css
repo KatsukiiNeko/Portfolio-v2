@@ -8,8 +8,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32px;
-  height: 68px;
+  padding: 0 var(--space-8);
+  height: 72px;
   background: rgba(13, 13, 15, 0.6);
   backdrop-filter: blur(18px) saturate(1.4);
   -webkit-backdrop-filter: blur(18px) saturate(1.4);
@@ -20,7 +20,7 @@
 
 .navbar-brand {
   font-family: 'Syne', sans-serif;
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 800;
   letter-spacing: -0.03em;
   background: linear-gradient(120deg, var(--primary-light) 0%, #c084fc 100%);
@@ -34,7 +34,7 @@
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex: 1;
   justify-content: flex-end;
 }
@@ -42,17 +42,17 @@
 .navbar-menu {
   display: flex;
   list-style: none;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1;
   justify-content: center;
 }
 
 .nav-link {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 8px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
   transition: color var(--transition), background var(--transition);
   letter-spacing: 0.01em;
 }
@@ -63,20 +63,26 @@
   background: rgba(129, 77, 229, 0.12);
 }
 
+.nav-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  background: rgba(129, 77, 229, 0.08);
+}
+
 .icon-btn,
 .theme-toggle,
 .hamburger {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: var(--space-10);
+  height: var(--space-10);
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   cursor: pointer;
-  font-size: 15px;
+  font-size: var(--text-base);
   transition:
     background var(--transition),
     border-color var(--transition),
@@ -88,7 +94,14 @@
 .hamburger:hover {
   background: var(--card-2);
   border-color: var(--primary);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.icon-btn:focus-visible,
+.theme-toggle:focus-visible,
+.hamburger:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
 }
 
 .hamburger {
@@ -97,19 +110,19 @@
 
 @media (max-width: 768px) {
   .navbar {
-    padding: 0 20px;
+    padding: 0 var(--space-5);
   }
 
   .navbar-menu {
     display: none;
     position: absolute;
-    top: 68px;
+    top: 72px;
     left: 50%;
     width: 100%;
     transform: translateX(-50%);
     background: var(--bg-2);
     border-bottom: 1px solid var(--border);
-    padding: 12px 20px 20px;
+    padding: var(--space-3) var(--space-5) var(--space-5);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     text-align: center;
@@ -129,8 +142,8 @@
 
   .nav-link {
     display: block;
-    padding: 10px 14px;
-    font-size: 15px;
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-base);
     text-align: center;
   }
 }

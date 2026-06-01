@@ -9,7 +9,7 @@
   z-index: 2000;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 .modal.active,
@@ -19,18 +19,18 @@
 
 .modal-close {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
+  top: var(--space-5);
+  right: var(--space-5);
+  width: var(--space-10);
+  height: var(--space-10);
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: #fff;
-  font-size: 18px;
+  font-size: var(--text-lg);
   cursor: pointer;
   transition: background var(--transition);
   z-index: 2001;
@@ -40,9 +40,14 @@
   background: rgba(255,255,255,0.2);
 }
 
+.modal-close:focus-visible {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+  outline: none;
+}
+
 .modal-content {
   background: var(--card);
-  padding: 32px;
+  padding: var(--space-8);
   border-radius: var(--radius-lg);
   max-width: 720px;
   width: 100%;
@@ -54,20 +59,20 @@
 .modal-content img {
   width: 100%;
   border-radius: var(--radius);
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .modal-content h2 {
   font-family: 'Syne', sans-serif;
-  font-size: 22px;
+  font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 .modal-content p {
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: var(--text-base);
   line-height: 1.7;
 }
 
@@ -91,15 +96,15 @@
 
 #backToTop {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  width: 44px;
-  height: 44px;
+  bottom: var(--space-8);
+  right: var(--space-8);
+  width: var(--space-12);
+  height: var(--space-12);
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: var(--radius);
+  font-size: var(--text-base);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -107,7 +112,7 @@
   box-shadow: 0 4px 20px var(--primary-glow);
   transition: all var(--transition);
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(var(--space-3));
   pointer-events: none;
   z-index: 900;
 }
@@ -122,6 +127,11 @@
   background: var(--primary-light);
   transform: translateY(-3px);
   box-shadow: 0 8px 28px var(--primary-glow);
+}
+
+#backToTop:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
 }
 
 .modal-open {

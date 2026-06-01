@@ -32,3 +32,15 @@
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
+
+/* No-JS fallback: ensure project cards are visible */
+.project-card {
+  opacity: 1;
+  transform: none;
+}
+
+/* When JS is active, cards start hidden and animate in */
+.js-enabled .project-card {
+  opacity: 0;
+  transform: translateY(20px);
+}

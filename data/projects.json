@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "title": " Kaoruko Waguri ",
+    "title": "Kaoruko Waguri",
     "category": "design",
     "image": "assets/images/Kaoru.png",
     "tags": [
@@ -48,6 +48,7 @@
     ],
     "description": "Money Vault is a privacy-focused personal finance tracker built as an offline-first PWA. It stores all data locally on the device and uses encryption to protect sensitive information. Its purpose is to give users a simple, secure way to manage income and expenses without relying on external servers or cloud services.",
     "githubUrl": "https://github.com/KatsukiiNeko/Personal-financial-managment",
+    "liveUrl": "https://money-vaults.vercel.app/",
     "id": 4
   }
 ]

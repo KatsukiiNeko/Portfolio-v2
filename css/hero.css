@@ -8,7 +8,7 @@
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  padding: 120px 24px 80px;
+  padding: 120px var(--space-6) 80px;
   user-select: none;
 }
 
@@ -39,12 +39,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .hero-title {
   font-family: 'Syne', sans-serif;
-  font-size: clamp(52px, 8vw, 96px);
+  font-size: var(--text-3xl);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -61,7 +61,7 @@
 }
 
 .hero-subtitle {
-  font-size: clamp(14px, 2vw, 17px);
+  font-size: clamp(0.875rem, 2vw, 1.0625rem);
   color: var(--text-muted);
   max-width: 480px;
   opacity: 0;
@@ -70,10 +70,10 @@
 
 .hero-cta {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   opacity: 0;
   animation: fadeSlideUp 0.7s 0.55s forwards;
 }
@@ -81,10 +81,10 @@
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
   border-radius: var(--radius);
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   border: none;
@@ -104,6 +104,11 @@
   box-shadow: 0 8px 24px var(--primary-glow);
 }
 
+.btn-primary:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
 .btn-ghost {
   background: transparent;
   color: var(--text);
@@ -114,21 +119,24 @@
   background: var(--card);
   border-color: var(--primary);
   transform: translateY(-2px);
-  opacity: 0.67;
+}
 
+.btn-ghost:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
 }
 
 .scroll-indicator {
   position: absolute;
-  bottom: 32px;
+  bottom: var(--space-8);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   opacity: 0;
@@ -144,7 +152,7 @@
 
 @media (max-width: 768px) {
   .hero {
-    padding-top: 24px;
+    padding-top: var(--space-6);
   }
 
   #three-container {
@@ -154,5 +162,6 @@
     max-width: 280px;
     max-height: 280px;
     margin: 0 auto;
+    margin-bottom: var(--space-6);
   }
 }

@@ -58,22 +58,26 @@ function initHeroThree() {
     opacity:     0.65,
   });
 
+  const isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+  const torusRadialSeg = isMobile ? 8 : 16;
+  const torusTubularSeg = isMobile ? 40 : 80;
+
   const torus1 = new THREE.Mesh(
-    new THREE.TorusGeometry(1.7, 0.06, 16, 80),
+    new THREE.TorusGeometry(1.7, 0.06, torusRadialSeg, torusTubularSeg),
     torusMat
   );
   torus1.rotation.x = Math.PI / 2;
   group.add(torus1);
 
   const torus2 = new THREE.Mesh(
-    new THREE.TorusGeometry(1.9, 0.04, 16, 80),
+    new THREE.TorusGeometry(1.9, 0.04, torusRadialSeg, torusTubularSeg),
     torusMat.clone()
   );
   torus2.rotation.x = Math.PI / 3;
   torus2.rotation.y = Math.PI / 5;
   group.add(torus2);
 
-  const PARTICLE_COUNT = 160;
+  const PARTICLE_COUNT = isMobile ? 60 : 160;
   const positions      = new Float32Array(PARTICLE_COUNT * 3);
   const pColors        = new Float32Array(PARTICLE_COUNT * 3);
   const color          = new THREE.Color();
@@ -176,6 +180,11 @@ function initHeroThree() {
 
   function animate() {
     requestAnimationFrame(animate);
+
+    // Pause rendering when hero is off-screen
+    const rect = container.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+
     const t = clock.getElapsedTime();
 
     if (!dragging) {

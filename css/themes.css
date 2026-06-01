@@ -4,13 +4,36 @@
   --primary-dark:   #5a32b0;
   --primary-glow:   rgba(129, 77, 229, 0.35);
 
+  /* 8px grid spacing scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Type scale */
+  --text-xs:   0.6875rem;
+  --text-sm:   0.8125rem;
+  --text-base: 1rem;
+  --text-md:   1.0625rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.375rem;
+  --text-2xl:  clamp(1.75rem, 4vw, 2.625rem);
+  --text-3xl:  clamp(3.25rem, 8vw, 6rem);
+
+  /* Surface colors */
   --bg-dark:        #0d0d0f;
   --bg-dark-2:      #131316;
   --card-dark:      #1a1a1e;
   --card-dark-2:    #222228;
   --border-dark:    rgba(255,255,255,0.07);
   --text-dark:      #e8e8ec;
-  --text-muted-dark:#8888a0;
+  --text-muted-dark:#9999b0;
 
   --bg-light:       #f4f3f8;
   --bg-light-2:     #ffffff;
@@ -18,7 +41,7 @@
   --card-light-2:   #f0eeff;
   --border-light:   rgba(0,0,0,0.08);
   --text-light:     #14141a;
-  --text-muted-light:#6b6b80;
+  --text-muted-light:#5a5a70;
 
   --bg:             var(--bg-dark);
   --bg-2:           var(--bg-dark-2);
@@ -28,11 +51,16 @@
   --text:           var(--text-dark);
   --text-muted:     var(--text-muted-dark);
 
+  --radius-sm:      8px;
   --radius:         12px;
   --radius-lg:      20px;
+  --radius-pill:    100px;
   --transition:     0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --focus-ring:     0 0 0 3px rgba(129, 77, 229, 0.4);
   --shadow:         0 8px 32px rgba(0,0,0,0.4);
   --shadow-sm:      0 2px 12px rgba(0,0,0,0.25);
+  --shadow-md:      0 8px 24px rgba(0,0,0,0.3);
+  --shadow-hover:   0 16px 48px rgba(0,0,0,0.3);
 }
 
 [data-theme="light"] {
@@ -45,10 +73,8 @@
   --text-muted:  var(--text-muted-light);
   --shadow:      0 8px 32px rgba(0,0,0,0.1);
   --shadow-sm:   0 2px 12px rgba(0,0,0,0.08);
-}
-
-[data-theme="light"] body::before {
-  opacity: 0.04;
+  --shadow-md:   0 8px 24px rgba(0,0,0,0.12);
+  --shadow-hover:0 16px 48px rgba(0,0,0,0.12);
 }
 
 [data-theme="light"] .navbar {

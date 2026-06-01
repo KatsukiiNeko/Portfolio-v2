@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
+  document.documentElement.classList.add('js-enabled');
+
   initTheme();
   initNav();
   initReveal();

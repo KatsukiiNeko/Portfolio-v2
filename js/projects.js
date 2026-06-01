@@ -2,7 +2,7 @@
 const fallbackProjects = [
   {
     id: 1,
-    title: " Kaoruko Waguri ",
+    title: "Kaoruko Waguri",
     category: "design",
     image: "assets/images/Kaoru.png",
     tags: ["Anime", "Photoshop", "Illustrator"],
@@ -37,8 +37,7 @@ const fallbackProjects = [
     liveUrl: "https://money-vaults.vercel.app/"
   },
 ];
-;
-;
+
 
 async function loadProjects() {
   let projects = fallbackProjects;

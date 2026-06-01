@@ -197,7 +197,13 @@ Portfolio-v2/
 │
 ├── js/
 │   ├── main.js
-│   ├── renderpipe.js
+│   ├── theme.js
+│   ├── nav.js
+│   ├── animations.js
+│   ├── about.js
+│   ├── skills.js
+│   ├── projects.js
+│   ├── contact.js
 │   └── three-scene.js
 │
 └── data/
