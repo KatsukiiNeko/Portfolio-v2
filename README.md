@@ -4,9 +4,6 @@
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3\&logoColor=white\&style=for-the-badge)
 ![JavaScript](https://img.shields.io/badge/JavaScript-ES2025-F7DF1E?logo=javascript\&logoColor=black\&style=for-the-badge)
 ![Three.js](https://img.shields.io/badge/Three.js-r180-000000?logo=three.js\&style=for-the-badge)
-![Architecture](https://img.shields.io/badge/Architecture-Component%20Driven-6C63FF?style=for-the-badge)
-![Responsive](https://img.shields.io/badge/Responsive-Mobile%20First-00C853?style=for-the-badge)
-![Performance](https://img.shields.io/badge/Performance-Optimized-FF6B4A?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
 
