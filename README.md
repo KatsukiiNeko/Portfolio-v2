@@ -271,6 +271,5 @@ MIT License. See `LICENSE` for details.
 
 ### ✨ Design First • ⚡ Performance First • 🎨 Experience First
 
-*Crafting interfaces that feel as good as they look.*
-
+> *Design. Code. Experience.*
 </div>
