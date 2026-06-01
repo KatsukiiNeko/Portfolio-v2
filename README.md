@@ -161,7 +161,7 @@ Visual Output
 
 ---
 
-## ⚙️ Technology Stack
+## ⚙️ Tech Stack
 
 | Category        | Technology         |
 | --------------- | ------------------ |
