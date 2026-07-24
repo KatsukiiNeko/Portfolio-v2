@@ -27,16 +27,25 @@ const fallbackProjects = [
     githubUrl: "https://github.com/KatsukiiNeko/",
   },
   {
-    id: 4,
     title: "Money Vault",
     category: "web",
     image: "assets/images/opensource-PFM.webp",
-    tags: ["CSS", "React", "DB"],
+    tags: ["web", "react", "DB"],
     description: "Money Vault is a privacy-focused personal finance tracker built as an offline-first PWA. It stores all data locally on the device and uses encryption to protect sensitive information. Its purpose is to give users a simple, secure way to manage income and expenses without relying on external servers or cloud services.",
     githubUrl: "https://github.com/KatsukiiNeko/Personal-financial-managment",
-    liveUrl: "https://money-vaults.vercel.app/"
+    liveUrl: "https://money-vaults.vercel.app/",
+    id: 4,
+  },
+  {
+    title: "Test 4",
+    category: "design",
+    image: "assets/images/test 4.webp",
+    tags: ["anime poster", "banner design"],
+    description: "Personal fan art exploring anime poster design. The project focuses on composition, color harmony, and visual hierarchy using layered character renders, graphic elements, and a sky-inspired theme.",
+    id: 5,
   },
 ];
+;
 
 
 async function loadProjects() {

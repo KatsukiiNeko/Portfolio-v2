@@ -50,5 +50,17 @@
     "githubUrl": "https://github.com/KatsukiiNeko/Personal-financial-managment",
     "liveUrl": "https://money-vaults.vercel.app/",
     "id": 4
+  },
+  {
+    "title": "Test 4",
+    "category": "design",
+    "image": "assets/images/test 4.webp",
+    "tags": [
+      "Photoshop",
+      "Illustrator",
+      "Banner"
+    ],
+    "description": "Personal fan art exploring anime poster design. The project focuses on composition, color harmony, and visual hierarchy using layered character renders, graphic elements, and a sky-inspired theme.",
+    "id": 5
   }
 ]
