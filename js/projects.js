@@ -37,10 +37,10 @@ const fallbackProjects = [
     id: 4,
   },
   {
-    title: "Test 4",
+    title: "Umi Asanagi",
     category: "design",
-    image: "assets/images/test 4.webp",
-    tags: ["anime poster", "banner design"],
+    image: "assets/images/Umi_Asanagi.webp",
+    tags: ["Photoshop", "Illustrator","Banner"],
     description: "Personal fan art exploring anime poster design. The project focuses on composition, color harmony, and visual hierarchy using layered character renders, graphic elements, and a sky-inspired theme.",
     id: 5,
   },
