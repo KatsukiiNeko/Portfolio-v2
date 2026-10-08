@@ -5,47 +5,70 @@ export type HeroThree = { destroy: () => void }
 type Tier = "desktop" | "tablet" | "mobile"
 type Rng = () => number
 
-type StarDef = {
+type PrimaryStarDef = {
+  hip: number
   name: string
   desig: string
   mag: number
   bv: number
-  x: number
-  y: number
-  z: number
-  tint: string
+  v: readonly [number, number, number]
 }
 
-const LIBRA_STARS = {
-  beta: { name: "Zubeneschamali", desig: "β Lib", mag: 2.61, bv: -0.071, x: -0.069, y: 1.0, z: -0.05, tint: "#edf3ff" },
-  alpha2: { name: "Zubenelgenubi", desig: "α2 Lib", mag: 2.75, bv: 0.147, x: 0.54, y: 0.331, z: 0.3, tint: "#f3f6ff" },
-  sigma: { name: "Brachium", desig: "σ Lib", mag: 3.25, bv: 1.674, x: 0.207, y: -0.557, z: 0.1, tint: "#ffedde" },
-  upsilon: { name: "", desig: "υ Lib", mag: 3.6, bv: 1.361, x: -0.509, y: -0.836, z: -0.25, tint: "#fff0e5" },
-  tau: { name: "", desig: "τ Lib", mag: 3.66, bv: -0.177, x: -0.54, y: -1.0, z: -0.35, tint: "#ebf1ff" },
-  gamma: { name: "Zubenelhakrabi", desig: "γ Lib", mag: 3.91, bv: 1.007, x: -0.507, y: 0.463, z: -0.15, tint: "#fff5ed" },
-  theta: { name: "", desig: "θ Lib", mag: 4.13, bv: 1.003, x: -0.931, y: 0.261, z: -0.1, tint: "#fff5ed" },
-  iota: { name: "", desig: "ι Lib", mag: 4.54, bv: -0.071, x: 0.035, y: -0.021, z: 0.15, tint: "#edf3ff" },
-} satisfies Record<string, StarDef>
+// J2000 unit vectors on the celestial sphere (Hipparcos / HYG v4.1). Astronomical data — do not adjust.
+const PRIMARY_LIBRA_STARS = {
+  theta: { hip: 77853, name: "", desig: "θ Lib", mag: 4.13, bv: 1.003, v: [-0.501005, -0.28785, 0.816172] },
+  gamma: { hip: 76333, name: "Zubenelhakrabi", desig: "γ Lib", mag: 3.91, bv: 1.007, v: [-0.569927, -0.255269, 0.781038] },
+  beta: { hip: 74785, name: "Zubeneschamali", desig: "β Lib", mag: 2.61, bv: -0.071, v: [-0.644004, -0.163032, 0.747449] },
+  alpha2: { hip: 72622, name: "Zubenelgenubi", desig: "α² Lib", mag: 2.75, bv: 0.147, v: [-0.706074, -0.276338, 0.651995] },
+  sigma: { hip: 73714, name: "Brachium", desig: "σ Lib", mag: 3.25, bv: 1.674, v: [-0.627922, -0.427073, 0.650632] },
+} satisfies Record<string, PrimaryStarDef>
 
-const SIX = ["beta", "alpha2", "sigma", "upsilon", "tau", "gamma"] as const
+type PrimaryKey = keyof typeof PRIMARY_LIBRA_STARS
 
-const LIBRA_LINES: [keyof typeof LIBRA_STARS, keyof typeof LIBRA_STARS][] = [
-  ["sigma", "alpha2"],
-  ["alpha2", "beta"],
-  ["beta", "gamma"],
-  ["gamma", "upsilon"],
-  ["upsilon", "tau"],
-  ["alpha2", "gamma"],
-]
+const PRIMARY_ORDER = ["theta", "gamma", "beta", "alpha2", "sigma"] as const
 
-const FAINT_HIP = [
-  { x: 0.42, y: 0.86, z: -0.4, mag: 5.5, tint: "#f4f1ea" },
-  { x: 0.72, y: -0.62, z: -0.3, mag: 5.9, tint: "#efe9ea" },
-  { x: -0.88, y: -0.36, z: -0.2, mag: 5.1, tint: "#f0ede4" },
-  { x: -0.24, y: 0.66, z: -0.35, mag: 5.6, tint: "#f2f0f7" },
-  { x: 0.94, y: 0.12, z: -0.45, mag: 5.3, tint: "#f5f1e8" },
-  { x: -0.66, y: 0.84, z: -0.28, mag: 5.8, tint: "#f1eef4" },
-]
+// Stellarium modern stick figure: θ → γ → β → α² → σ → γ (quadrilateral closed at γ).
+const LIBRA_LINES = [
+  ["theta", "gamma"],
+  ["gamma", "beta"],
+  ["beta", "alpha2"],
+  ["alpha2", "sigma"],
+  ["sigma", "gamma"],
+] as const satisfies readonly (readonly [PrimaryKey, PrimaryKey])[]
+
+// Real Libra-region stars outside the stick figure (mag < 5 field rule): background only, no lines.
+const BACKGROUND_LIBRA_STARS = {
+  upsilon: { desig: "υ Lib", mag: 3.6, bv: 1.361, v: [-0.515138, -0.471552, 0.715731], z: -2.4 },
+  tau: { desig: "τ Lib", mag: 3.66, bv: -0.177, v: [-0.502001, -0.496637, 0.708059], z: -3.1 },
+} satisfies Record<string, { desig: string; mag: number; bv: number; v: readonly [number, number, number]; z: number }>
+
+// Gnomonic projection onto the figure plane: camera-facing from +z, east on the left,
+// reproducing the apparent-sky arrangement of the IAU Libra chart without mirroring.
+const CENTROID: readonly [number, number, number] = [-0.614905, -0.284279, 0.73558]
+const TAN_SCALE = 11.42
+
+function projectLib(v: readonly [number, number, number]): { x: number; y: number; z: number } {
+  const rl = Math.hypot(CENTROID[2], CENTROID[0])
+  const right = [-CENTROID[2] / rl, 0, CENTROID[0] / rl]
+  const up = [
+    right[1] * CENTROID[2] - right[2] * CENTROID[1],
+    right[2] * CENTROID[0] - right[0] * CENTROID[2],
+    right[0] * CENTROID[1] - right[1] * CENTROID[0],
+  ]
+  const d = v[0] * CENTROID[0] + v[1] * CENTROID[1] + v[2] * CENTROID[2]
+  return {
+    x: ((v[0] * right[0] + v[1] * right[1] + v[2] * right[2]) / d) * TAN_SCALE,
+    y: ((v[0] * up[0] + v[1] * up[1] + v[2] * up[2]) / d) * TAN_SCALE,
+    z: -(1 - d) * TAN_SCALE,
+  }
+}
+
+type SceneStar = PrimaryStarDef & { x: number; y: number; z: number }
+
+const PRIMARY_SCENE = {} as Record<PrimaryKey, SceneStar>
+for (const key of PRIMARY_ORDER) {
+  PRIMARY_SCENE[key] = { ...PRIMARY_LIBRA_STARS[key], ...projectLib(PRIMARY_LIBRA_STARS[key].v) }
+}
 
 const CONFIG = {
   seed: 20251008,
@@ -85,7 +108,7 @@ const CONFIG = {
 
   lighting: { exposure: 1.15, haloR0: 0.35, hazeAlpha: 0.006 },
 
-  lines: { widthPx: 1.4, gap: 0.05, alpha: 0.55, traceDur: 1.0, traceStagger: 0.16 },
+  lines: { widthPx: 1.4, featherPx: 0.8, gap: 0.05, alpha: 0.55, traceDur: 1.0, traceStagger: 0.16 },
 
   pulse: { enabled: true, periodSec: 8.0 },
 
@@ -94,9 +117,9 @@ const CONFIG = {
   reveal: { starsSec: 1.4, linesSec: 1.0, fieldDelay: 1.6, fieldSec: 1.0 },
 
   tiers: {
-    desktop: { dprCap: 1.75, field: 520, spikes: true, haze: true, fill: 0.5, extraFaint: 6, sizeMul: 1 },
-    tablet: { dprCap: 1.5, field: 300, spikes: true, haze: true, fill: 0.55, extraFaint: 4, sizeMul: 1 },
-    mobile: { dprCap: 1.25, field: 170, spikes: false, haze: false, fill: 0.35, extraFaint: 2, sizeMul: 1.14 },
+    desktop: { dprCap: 1.75, field: 520, spikes: true, haze: true, fill: 0.5, sizeMul: 1 },
+    tablet: { dprCap: 1.5, field: 300, spikes: true, haze: true, fill: 0.55, sizeMul: 1 },
+    mobile: { dprCap: 1.25, field: 170, spikes: false, haze: false, fill: 0.35, sizeMul: 1.14 },
   },
 
   quality: { warmupFrames: 20, sampleFrames: 60, frameMs: 22, dprStep: 0.25, recheckMs: 2000 },
@@ -130,7 +153,7 @@ function bvToTemp(bv: number): number {
   return 4600 * (1 / (0.92 * b + 1.7) + 1 / (0.92 * b + 0.62))
 }
 
-function kelvinToSrgb(k: number): THREE.Color {
+function kelvinToSrgb(k: number, whiteLerp: number): THREE.Color {
   const t = k / 100
   let r: number
   let g: number
@@ -145,7 +168,7 @@ function kelvinToSrgb(k: number): THREE.Color {
     b = 1
   }
   const c = new THREE.Color(r, g, b)
-  c.lerp(new THREE.Color(1, 1, 1), 0.7)
+  c.lerp(new THREE.Color(1, 1, 1), whiteLerp)
   return c
 }
 
@@ -171,6 +194,7 @@ uniform vec3 uInk;
 varying vec3 vTint;
 varying float vI;
 varying float vSpike;
+varying float vFlux;
 
 float hash11(float n) { return fract(sin(n * 127.1) * 43758.5453); }
 
@@ -199,11 +223,12 @@ void main() {
   float hasPointer = step(abs(uPointerNDC.x), 4.0);
   float near = smoothstep(uPointerRadius, 0.0, length((ndc - uPointerNDC) * vec2(uAspect, 1.0))) * hasPointer;
 
-  vI = (0.35 + 0.65 * pow(aFlux, 0.7)) * tw01 * seq * (1.0 + 0.35 * near);
+  vI = (0.26 + 0.74 * pow(aFlux, 0.62)) * tw01 * seq * (1.0 + 0.35 * near);
   vTint = aTint;
   vSpike = aSpike;
+  vFlux = clamp(aFlux, 0.0, 1.0);
 
-  float size = uSizeBase * (0.40 + 0.60 * sqrt(aFlux)) * (1.0 + 0.10 * (tw01 - 1.0) + 0.15 * near);
+  float size = uSizeBase * (0.34 + 0.66 * pow(aFlux, 0.42)) * (1.0 + 0.10 * (tw01 - 1.0) + 0.15 * near);
   gl_PointSize = clamp(size * uPixelRatio * (uRefDist / -mv.z), 2.0, uMaxPoint);
 }
 `
@@ -217,23 +242,25 @@ uniform vec3 uInk;
 varying vec3 vTint;
 varying float vI;
 varying float vSpike;
+varying float vFlux;
 
 void main() {
   vec2 p = (gl_PointCoord - 0.5) * 2.0;
   float r = length(p);
   if (r > 1.0) discard;
-  float edge = 1.0 - smoothstep(0.70, 1.0, r);
-  float core = exp(-pow(r / 0.11, 2.0));
-  float glow = exp(-r * 4.5) * edge;
+  float edge = 1.0 - smoothstep(0.55, 1.0, r);
+  float coreR = mix(0.13, 0.085, vFlux);
+  float core = exp(-pow(r / coreR, 2.0));
+  float glow = exp(-r * mix(6.0, 3.4, vFlux)) * edge;
   vec2 q = abs(p);
   float spikes = (exp(-q.x * 38.0) * exp(-q.y * 2.6) + exp(-q.y * 38.0) * exp(-q.x * 2.6)) * edge * vSpike;
 
   vec3 spikeTint = mix(mix(vTint, vec3(1.0), 0.75), uInk, uMode);
   vec3 coreTint = mix(vTint, uInk, uMode);
 
-  vec3 col = coreTint * (core * 1.7 + glow * 0.30)
-           + spikeTint * spikes * 0.13
-           + uHalo * glow * mix(0.45, 0.35, uMode);
+  vec3 col = coreTint * (core * (1.3 + 1.9 * vFlux) + glow * (0.14 + 0.30 * vFlux))
+           + spikeTint * spikes * (0.08 + 0.10 * vFlux)
+           + uHalo * glow * (0.16 + 0.26 * vFlux) * mix(1.0, 0.7, uMode);
   col *= vI;
   col = 1.0 - exp(-col * uExposure);
   gl_FragColor = vec4(col, 1.0);
@@ -252,7 +279,8 @@ attribute float aDelay;
 attribute float aDur;
 
 uniform vec2 uResolution;
-uniform float uWidthPx;
+uniform float uHalfPx;
+uniform float uFeatherPx;
 uniform float uTrace;
 
 varying vec3 vLocal;
@@ -267,7 +295,7 @@ void main() {
   vec2 dir = normalize((c1.xy / c1.w - c0.xy / c0.w) * uResolution);
   vec2 nrm = vec2(-dir.y, dir.x);
   gl_Position = c0;
-  gl_Position.xy += nrm * aSide * (uWidthPx / uResolution) * c0.w;
+  gl_Position.xy += nrm * aSide * ((uHalfPx + uFeatherPx) / uResolution) * c0.w;
   vLocal = position;
   vAlong = aAlong;
   vAcross = aSide;
@@ -283,8 +311,10 @@ uniform float uLineAlpha;
 uniform float uR0;
 uniform float uPulseEnabled;
 uniform vec2 uPulse;
-uniform vec3 uStarPos[8];
-uniform float uStarFlux[8];
+uniform vec3 uStarPos[5];
+uniform float uStarFlux[5];
+uniform float uHalfPx;
+uniform float uFeatherPx;
 
 varying vec3 vLocal;
 varying float vAlong;
@@ -295,12 +325,13 @@ varying float vProg;
 void main() {
 
   float L = 0.0;
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < 5; i++) {
     float d = distance(vLocal, uStarPos[i]);
     L += uStarFlux[i] / (1.0 + (d * d) / (uR0 * uR0));
   }
   float ends = smoothstep(0.0, 0.18, vAlong) * (1.0 - smoothstep(0.82, 1.0, vAlong));
-  float across = 1.0 - smoothstep(0.35, 1.0, abs(vAcross));
+  float dPx = abs(vAcross) * (uHalfPx + uFeatherPx);
+  float across = 1.0 - smoothstep(max(uHalfPx - uFeatherPx, 0.0), uHalfPx + uFeatherPx, dPx);
   float seen = 1.0 - smoothstep(vProg - 0.06, vProg, vAlong);
   float head = exp(-pow((vAlong - vProg) / 0.04, 2.0)) * step(0.001, vProg) * step(vProg, 0.999);
 
@@ -345,7 +376,7 @@ void main() {
   float tw = 0.6 * sin(uTime * (2.2 + 3.5 * aSeed) + s * 3.0) + 0.4 * sin(uTime * (5.5 + 4.0 * aSeed) + s * 7.0);
   float tw01 = 1.0 + uTwinkle * 0.08 * tw;
 
-  vI = (0.14 + 0.5 * pow(aFlux, 0.9)) * tw01 * uReveal;
+  vI = (0.11 + 0.45 * pow(aFlux, 0.92)) * tw01 * uReveal;
   vTint = aTint;
 
   float size = uSizeBase * (0.28 + 0.42 * sqrt(aFlux));
@@ -405,51 +436,32 @@ type StarBuild = {
   tints: Float32Array
   spikes: Float32Array
   count: number
-  localFlux: number[]
 }
 
-function buildStars(six: readonly string[], faintCount: number, spikesOn: boolean): StarBuild {
+function buildPrimary(spikesOn: boolean): StarBuild {
   const rng = mulberry32(CONFIG.seed)
-  const count = six.length + faintCount
+  const count = PRIMARY_ORDER.length
   const positions = new Float32Array(count * 3)
   const flux = new Float32Array(count)
   const seeds = new Float32Array(count)
   const tints = new Float32Array(count * 3)
   const spikes = new Float32Array(count)
-  const localFlux: number[] = []
 
-  six.forEach((key, i) => {
-    const d = LIBRA_STARS[key as keyof typeof LIBRA_STARS]
-    positions[i * 3] = d.x * FIG_SCALE
-    positions[i * 3 + 1] = d.y * FIG_SCALE
-    positions[i * 3 + 2] = d.z * FIG_SCALE
+  PRIMARY_ORDER.forEach((key, i) => {
+    const d = PRIMARY_SCENE[key]
+    positions[i * 3] = d.x
+    positions[i * 3 + 1] = d.y
+    positions[i * 3 + 2] = d.z
     flux[i] = magToFlux(d.mag)
     seeds[i] = rng()
-    const c = kelvinToSrgb(bvToTemp(d.bv))
+    const c = kelvinToSrgb(bvToTemp(d.bv), 0.42)
     tints[i * 3] = c.r
     tints[i * 3 + 1] = c.g
     tints[i * 3 + 2] = c.b
     spikes[i] = spikesOn && d.mag < 3.0 ? Math.min(1, flux[i]) : 0
-    localFlux.push(flux[i])
   })
 
-  for (let j = 0; j < faintCount; j++) {
-    const e = FAINT_HIP[j]
-    const i = six.length + j
-    positions[i * 3] = e.x * FIG_SCALE
-    positions[i * 3 + 1] = e.y * FIG_SCALE
-    positions[i * 3 + 2] = e.z * FIG_SCALE
-    flux[i] = magToFlux(e.mag)
-    seeds[i] = rng()
-    const c = new THREE.Color(e.tint)
-    tints[i * 3] = c.r
-    tints[i * 3 + 1] = c.g
-    tints[i * 3 + 2] = c.b
-    spikes[i] = 0
-    localFlux.push(flux[i])
-  }
-
-  return { positions, flux, seeds, tints, spikes, count, localFlux }
+  return { positions, flux, seeds, tints, spikes, count }
 }
 
 type LineBuild = {
@@ -474,19 +486,19 @@ function buildLines(cfg: typeof CONFIG.lines): LineBuild {
 
   for (let s = 0; s < n; s++) {
     const [aKey, bKey] = LIBRA_LINES[s]
-    const a = LIBRA_STARS[aKey]
-    const b = LIBRA_STARS[bKey]
-    const dx = (b.x - a.x) * FIG_SCALE
-    const dy = (b.y - a.y) * FIG_SCALE
-    const dz = (b.z - a.z) * FIG_SCALE
+    const a = PRIMARY_SCENE[aKey]
+    const b = PRIMARY_SCENE[bKey]
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const dz = b.z - a.z
     const len = Math.hypot(dx, dy, dz)
     const g = cfg.gap
-    const sx = a.x * FIG_SCALE + (dx / len) * g
-    const sy = a.y * FIG_SCALE + (dy / len) * g
-    const sz = a.z * FIG_SCALE + (dz / len) * g
-    const ex = b.x * FIG_SCALE - (dx / len) * g
-    const ey = b.y * FIG_SCALE - (dy / len) * g
-    const ez = b.z * FIG_SCALE - (dz / len) * g
+    const sx = a.x + (dx / len) * g
+    const sy = a.y + (dy / len) * g
+    const sz = a.z + (dz / len) * g
+    const ex = b.x - (dx / len) * g
+    const ey = b.y - (dy / len) * g
+    const ez = b.z - (dz / len) * g
     const delay = s * cfg.traceStagger
     const dur = cfg.traceDur
 
@@ -513,10 +525,12 @@ type FieldBuild = { positions: Float32Array; seeds: Float32Array; tints: Float32
 
 function buildField(count: number, camZ: number, aspect: number): FieldBuild {
   const rng = mulberry32(CONFIG.seed + 1)
-  const positions = new Float32Array(count * 3)
-  const seeds = new Float32Array(count)
-  const tints = new Float32Array(count * 3)
-  const flux = new Float32Array(count)
+  const catalog = Object.values(BACKGROUND_LIBRA_STARS)
+  const total = count + catalog.length
+  const positions = new Float32Array(total * 3)
+  const seeds = new Float32Array(total)
+  const tints = new Float32Array(total * 3)
+  const flux = new Float32Array(total)
   const base = new THREE.Color(CONFIG.palette.starWhite)
   const warm = new THREE.Color("#ffe9cf")
   const cool = new THREE.Color("#dfe8ff")
@@ -541,6 +555,21 @@ function buildField(count: number, camZ: number, aspect: number): FieldBuild {
     tints[i * 3 + 1] = c.g
     tints[i * 3 + 2] = c.b
   }
+
+  catalog.forEach((e, j) => {
+    const i = count + j
+    const p = projectLib(e.v)
+    positions[i * 3] = p.x
+    positions[i * 3 + 1] = p.y
+    positions[i * 3 + 2] = e.z
+    seeds[i] = rng()
+    flux[i] = magToFlux(e.mag)
+    c.copy(kelvinToSrgb(bvToTemp(e.bv), 0.65)).lerp(grey, 0.35)
+    tints[i * 3] = c.r
+    tints[i * 3 + 1] = c.g
+    tints[i * 3 + 2] = c.b
+  })
+
   return { positions, seeds, tints, flux }
 }
 
@@ -617,8 +646,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   root.add(pivot)
   scene.add(root)
 
-  const six = tier.spikes ? [...SIX, "theta" as const, "iota" as const] : [...SIX]
-  const stars = buildStars(six, tier.extraFaint, tier.spikes)
+  const stars = buildPrimary(tier.spikes)
   const starGeo = new THREE.BufferGeometry()
   starGeo.setAttribute("position", new THREE.BufferAttribute(stars.positions, 3))
   starGeo.setAttribute("aFlux", new THREE.BufferAttribute(stars.flux, 1))
@@ -683,14 +711,10 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
 
   const uStarPos: THREE.Vector3[] = []
   const uStarFlux: number[] = []
-  six.forEach(key => {
-    const d = LIBRA_STARS[key as keyof typeof LIBRA_STARS]
-    uStarPos.push(new THREE.Vector3(d.x * FIG_SCALE, d.y * FIG_SCALE, d.z * FIG_SCALE))
+  for (const key of PRIMARY_ORDER) {
+    const d = PRIMARY_SCENE[key]
+    uStarPos.push(new THREE.Vector3(d.x, d.y, d.z))
     uStarFlux.push(magToFlux(d.mag))
-  })
-  while (uStarPos.length < 8) {
-    uStarPos.push(new THREE.Vector3(1e4, 1e4, 1e4))
-    uStarFlux.push(0)
   }
 
   const lineMat = new THREE.ShaderMaterial({
@@ -706,7 +730,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     blendDst: THREE.OneFactor,
     uniforms: {
       uResolution: { value: new THREE.Vector2(1, 1) },
-      uWidthPx: { value: 1.2 },
+      uHalfPx: { value: CONFIG.lines.widthPx },
+      uFeatherPx: { value: CONFIG.lines.featherPx },
       uTrace: { value: 0 },
       uLine: { value: lineColor },
       uHighlight: { value: highlight },
@@ -848,7 +873,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
 
     const res = renderer.getDrawingBufferSize(new THREE.Vector2())
     lineMat.uniforms.uResolution.value.copy(res)
-    lineMat.uniforms.uWidthPx.value = CONFIG.lines.widthPx * dprState.value
+    lineMat.uniforms.uHalfPx.value = CONFIG.lines.widthPx * dprState.value
+    lineMat.uniforms.uFeatherPx.value = CONFIG.lines.featherPx * dprState.value
     starMat.uniforms.uPixelRatio.value = dprState.value
     fieldMat.uniforms.uPixelRatio.value = dprState.value
     starMat.uniforms.uAspect.value = aspect
@@ -1247,24 +1273,28 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
 }
 
 export const libraDebug = {
-  stars: LIBRA_STARS,
+  stars: PRIMARY_LIBRA_STARS,
   lines: LIBRA_LINES,
   assertShape() {
-    const s = LIBRA_STARS
-    const ys = Object.values(s).map(d => d.y)
-    const xs = Object.values(s).map(d => d.x)
-    console.assert(s.beta.y === Math.max(...ys), "β topmost")
-    console.assert(s.tau.y === Math.min(...ys), "τ bottommost")
-    console.assert(s.alpha2.x === Math.max(...xs), "α2 rightmost")
-    const gapY = Math.abs(s.gamma.y - s.alpha2.y)
-    console.assert(gapY < 0.14, "γ and α2 near-same height", gapY)
-    const ut = Math.hypot(s.upsilon.x - s.tau.x, s.upsilon.y - s.tau.y)
-    console.assert(ut > 0.1 && ut < 0.25, "υ–τ tail spacing ≈0.17", ut)
-    const sixKeys = ["beta", "alpha2", "sigma", "upsilon", "tau", "gamma"] as const
-    const sx = sixKeys.map(k => s[k].x)
-    const sy = sixKeys.map(k => s[k].y)
-    const wh = (Math.max(...sx) - Math.min(...sx)) / (Math.max(...sy) - Math.min(...sy))
-    console.assert(Math.abs(wh - 0.54) < 0.02, "W/H ≈ 0.54", wh)
-    console.assert(LIBRA_LINES.length === 6, "exactly six segments")
+    const sep = (a: PrimaryKey, b: PrimaryKey) => {
+      const A = PRIMARY_LIBRA_STARS[a].v
+      const B = PRIMARY_LIBRA_STARS[b].v
+      return (Math.acos(A[0] * B[0] + A[1] * B[1] + A[2] * B[2]) * 180) / Math.PI
+    }
+    const want: [PrimaryKey, PrimaryKey, number][] = [
+      ["theta", "gamma", 4.8109],
+      ["gamma", "beta", 7.0505],
+      ["beta", "alpha2", 9.2134],
+      ["alpha2", "sigma", 9.7403],
+      ["sigma", "gamma", 12.8238],
+    ]
+    for (const [a, b, w] of want) {
+      const got = sep(a, b)
+      console.assert(Math.abs(got - w) < 0.05, `${a}-${b} separation ≈ ${w}°`, got)
+    }
+    console.assert(LIBRA_LINES.length === 5, "exactly five figure segments")
+    const ys = PRIMARY_ORDER.map(k => PRIMARY_SCENE[k].y)
+    const h = Math.max(...ys) - Math.min(...ys)
+    console.assert(Math.abs(h - 3.2) < 0.1, "figure height ≈ 3.2 scene units", h)
   },
 }
