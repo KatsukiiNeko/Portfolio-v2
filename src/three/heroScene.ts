@@ -106,7 +106,7 @@ const CONFIG = {
 
   sway: { yawDeg: 2.2, pitchDeg: 1.4, periodsSec: [47, 71] },
 
-  lighting: { exposure: 1.15, haloR0: 0.35, hazeAlpha: 0.006 },
+  lighting: { exposure: 1.15, haloR0: 0.9, hazeAlpha: 0.006 },
 
   lines: { widthPx: 1.4, featherPx: 0.8, gap: 0.05, alpha: 0.55, traceDur: 1.0, traceStagger: 0.16 },
 
@@ -117,9 +117,9 @@ const CONFIG = {
   reveal: { starsSec: 1.4, linesSec: 1.0, fieldDelay: 1.6, fieldSec: 1.0 },
 
   tiers: {
-    desktop: { dprCap: 1.75, field: 520, spikes: true, haze: true, fill: 0.5, sizeMul: 1 },
-    tablet: { dprCap: 1.5, field: 300, spikes: true, haze: true, fill: 0.55, sizeMul: 1 },
-    mobile: { dprCap: 1.25, field: 170, spikes: false, haze: false, fill: 0.35, sizeMul: 1.14 },
+    desktop: { dprCap: 1.75, field: 520, spikes: true, haze: true, fill: 0.5, decor: 14, sizeMul: 1 },
+    tablet: { dprCap: 1.5, field: 300, spikes: true, haze: true, fill: 0.55, decor: 9, sizeMul: 1 },
+    mobile: { dprCap: 1.25, field: 170, spikes: false, haze: false, fill: 0.35, decor: 5, sizeMul: 1.14 },
   },
 
   quality: { warmupFrames: 20, sampleFrames: 60, frameMs: 22, dprStep: 0.25, recheckMs: 2000 },
@@ -190,6 +190,8 @@ uniform float uPointerRadius;
 uniform float uMaxPoint;
 uniform float uMode;   
 uniform vec3 uInk;
+uniform vec3 uLightPos[6];
+uniform float uLightFlux[6];
 
 varying vec3 vTint;
 varying float vI;
@@ -223,7 +225,12 @@ void main() {
   float hasPointer = step(abs(uPointerNDC.x), 4.0);
   float near = smoothstep(uPointerRadius, 0.0, length((ndc - uPointerNDC) * vec2(uAspect, 1.0))) * hasPointer;
 
-  vI = (0.26 + 0.74 * pow(aFlux, 0.62)) * tw01 * seq * (1.0 + 0.35 * near);
+  float lightSum = 0.0;
+  for (int i = 0; i < 6; i++) {
+    lightSum += uLightFlux[i] / (1.0 + pow(distance(position, uLightPos[i]), 2.0) / 0.81);
+  }
+
+  vI = (0.26 + 0.74 * pow(aFlux, 0.62)) * (1.0 + 0.30 * min(lightSum, 1.2)) * tw01 * seq * (1.0 + 0.35 * near);
   vTint = aTint;
   vSpike = aSpike;
   vFlux = clamp(aFlux, 0.0, 1.0);
@@ -274,6 +281,7 @@ const LINE_VERT =  `
 attribute vec3 aOther;
 attribute float aSide;
 attribute float aAlong;
+attribute float aFade;
 attribute float aSeg;
 attribute float aDelay;
 attribute float aDur;
@@ -286,6 +294,7 @@ uniform float uTrace;
 varying vec3 vLocal;
 varying float vAlong;
 varying float vAcross;
+varying float vFade;
 varying float vSeg;
 varying float vProg;
 
@@ -299,6 +308,7 @@ void main() {
   vLocal = position;
   vAlong = aAlong;
   vAcross = aSide;
+  vFade = aFade;
   vSeg = aSeg;
   vProg = clamp((uTrace - aDelay) / aDur, 0.0, 1.0);
 }
@@ -311,25 +321,26 @@ uniform float uLineAlpha;
 uniform float uR0;
 uniform float uPulseEnabled;
 uniform vec2 uPulse;
-uniform vec3 uStarPos[5];
-uniform float uStarFlux[5];
+uniform vec3 uStarPos[13];
+uniform float uStarFlux[13];
 uniform float uHalfPx;
 uniform float uFeatherPx;
 
 varying vec3 vLocal;
 varying float vAlong;
 varying float vAcross;
+varying float vFade;
 varying float vSeg;
 varying float vProg;
 
 void main() {
 
   float L = 0.0;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 13; i++) {
     float d = distance(vLocal, uStarPos[i]);
     L += uStarFlux[i] / (1.0 + (d * d) / (uR0 * uR0));
   }
-  float ends = smoothstep(0.0, 0.18, vAlong) * (1.0 - smoothstep(0.82, 1.0, vAlong));
+  float ends = smoothstep(0.0, vFade, vAlong) * (1.0 - smoothstep(1.0 - vFade, 1.0, vAlong));
   float dPx = abs(vAcross) * (uHalfPx + uFeatherPx);
   float across = 1.0 - smoothstep(max(uHalfPx - uFeatherPx, 0.0), uHalfPx + uFeatherPx, dPx);
   float seen = 1.0 - smoothstep(vProg - 0.06, vProg, vAlong);
@@ -380,7 +391,7 @@ void main() {
   vTint = aTint;
 
   float size = uSizeBase * (0.28 + 0.42 * sqrt(aFlux));
-  gl_PointSize = clamp(size * uPixelRatio * (uRefDist / -mv.z), 1.5, 7.0);
+  gl_PointSize = clamp(size * uPixelRatio * (uRefDist / -mv.z), 1.5, 7.0 + 7.0 * smoothstep(0.35, 1.0, aFlux));
 }
 `
 
@@ -464,11 +475,39 @@ function buildPrimary(spikesOn: boolean): StarBuild {
   return { positions, flux, seeds, tints, spikes, count }
 }
 
+// Faint decorative stars scattered around the figure (own layer, no lines, dimmer than
+// any primary). The brightest among them act as secondary light sources for the figure.
+function buildDecor(count: number): StarBuild {
+  const rng = mulberry32(CONFIG.seed + 2)
+  const positions = new Float32Array(count * 3)
+  const flux = new Float32Array(count)
+  const seeds = new Float32Array(count)
+  const tints = new Float32Array(count * 3)
+  const spikes = new Float32Array(count)
+
+  for (let i = 0; i < count; i++) {
+    const ang = rng() * Math.PI * 2
+    const rad = 1.5 + Math.pow(rng(), 1.4) * 1.9
+    positions[i * 3] = Math.cos(ang) * rad * 1.15
+    positions[i * 3 + 1] = Math.sin(ang) * rad * 0.85
+    positions[i * 3 + 2] = -0.4 - rng() * 1.5
+    flux[i] = Math.pow(rng(), 2.2) * 0.22
+    seeds[i] = rng()
+    const c = kelvinToSrgb(bvToTemp(-0.1 + rng() * 1.4), 0.55)
+    tints[i * 3] = c.r
+    tints[i * 3 + 1] = c.g
+    tints[i * 3 + 2] = c.b
+  }
+
+  return { positions, flux, seeds, tints, spikes, count }
+}
+
 type LineBuild = {
   positions: Float32Array
   others: Float32Array
   sides: Float32Array
   alongs: Float32Array
+  fades: Float32Array
   segs: Float32Array
   delays: Float32Array
   durs: Float32Array
@@ -480,6 +519,7 @@ function buildLines(cfg: typeof CONFIG.lines): LineBuild {
   const others = new Float32Array(n * 4 * 3)
   const sides = new Float32Array(n * 4)
   const alongs = new Float32Array(n * 4)
+  const fades = new Float32Array(n * 4)
   const segs = new Float32Array(n * 4)
   const delays = new Float32Array(n * 4)
   const durs = new Float32Array(n * 4)
@@ -501,6 +541,7 @@ function buildLines(cfg: typeof CONFIG.lines): LineBuild {
     const ez = b.z - (dz / len) * g
     const delay = s * cfg.traceStagger
     const dur = cfg.traceDur
+    const fade = Math.min(0.18, Math.max(0.03, 0.16 / Math.max(len, 1e-4)))
 
     for (let v = 0; v < 4; v++) {
       const i = s * 4 + v
@@ -513,12 +554,13 @@ function buildLines(cfg: typeof CONFIG.lines): LineBuild {
       others[i * 3 + 2] = isEnd ? sz : ez
       sides[i] = v === 0 || v === 2 ? -1 : 1
       alongs[i] = isEnd ? 1 : 0
+      fades[i] = fade
       segs[i] = s
       delays[i] = delay
       durs[i] = dur
     }
   }
-  return { positions, others, sides, alongs, segs, delays, durs }
+  return { positions, others, sides, alongs, fades, segs, delays, durs }
 }
 
 type FieldBuild = { positions: Float32Array; seeds: Float32Array; tints: Float32Array; flux: Float32Array }
@@ -547,7 +589,7 @@ function buildField(count: number, camZ: number, aspect: number): FieldBuild {
     positions[i * 3 + 1] = (rng() * 2 - 1) * halfH
     positions[i * 3 + 2] = camZ - dist
     seeds[i] = rng()
-    flux[i] = Math.pow(rng(), 2.2)
+    flux[i] = rng() < 0.06 ? 0.5 + rng() * 0.5 : Math.pow(rng(), 2.2)
     const pick = rng()
     c.copy(pick < 0.7 ? base : pick < 0.9 ? warm : cool)
     c.lerp(grey, 0.5)
@@ -654,6 +696,23 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   starGeo.setAttribute("aTint", new THREE.BufferAttribute(stars.tints, 3))
   starGeo.setAttribute("aSpike", new THREE.BufferAttribute(stars.spikes, 1))
 
+  const decor = buildDecor(tier.decor)
+  const decorGeo = new THREE.BufferGeometry()
+  decorGeo.setAttribute("position", new THREE.BufferAttribute(decor.positions, 3))
+  decorGeo.setAttribute("aFlux", new THREE.BufferAttribute(decor.flux, 1))
+  decorGeo.setAttribute("aSeed", new THREE.BufferAttribute(decor.seeds, 1))
+  decorGeo.setAttribute("aTint", new THREE.BufferAttribute(decor.tints, 3))
+  decorGeo.setAttribute("aSpike", new THREE.BufferAttribute(decor.spikes, 1))
+
+  const lightIdx = Array.from(decor.flux.keys()).sort((a, b) => decor.flux[b] - decor.flux[a])
+  const decorVec = (i: number) => new THREE.Vector3(decor.positions[i * 3], decor.positions[i * 3 + 1], decor.positions[i * 3 + 2])
+  const uLightPos = lightIdx.slice(0, 6).map(decorVec)
+  const uLightFlux = lightIdx.slice(0, 6).map(i => decor.flux[i])
+  while (uLightPos.length < 6) {
+    uLightPos.push(new THREE.Vector3(1e4, 1e4, 1e4))
+    uLightFlux.push(0)
+  }
+
   let maxPoint = 64
   try {
     const gl = renderer.getContext() as WebGLRenderingContext
@@ -687,11 +746,17 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       uExposure: { value: CONFIG.lighting.exposure },
       uMode: { value: 0 },
       uInk: { value: new THREE.Color("#33245c") },
+      uLightPos: { value: uLightPos },
+      uLightFlux: { value: uLightFlux },
     },
   })
   const starPts = new THREE.Points(starGeo, starMat)
   starPts.frustumCulled = false
   gFig.add(starPts)
+
+  const decorPts = new THREE.Points(decorGeo, starMat)
+  decorPts.frustumCulled = false
+  gFig.add(decorPts)
 
   const lb = buildLines(CONFIG.lines)
   const lineGeo = new THREE.BufferGeometry()
@@ -699,6 +764,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   lineGeo.setAttribute("aOther", new THREE.BufferAttribute(lb.others, 3))
   lineGeo.setAttribute("aSide", new THREE.BufferAttribute(lb.sides, 1))
   lineGeo.setAttribute("aAlong", new THREE.BufferAttribute(lb.alongs, 1))
+  lineGeo.setAttribute("aFade", new THREE.BufferAttribute(lb.fades, 1))
   lineGeo.setAttribute("aSeg", new THREE.BufferAttribute(lb.segs, 1))
   lineGeo.setAttribute("aDelay", new THREE.BufferAttribute(lb.delays, 1))
   lineGeo.setAttribute("aDur", new THREE.BufferAttribute(lb.durs, 1))
@@ -715,6 +781,14 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     const d = PRIMARY_SCENE[key]
     uStarPos.push(new THREE.Vector3(d.x, d.y, d.z))
     uStarFlux.push(magToFlux(d.mag))
+  }
+  for (const i of lightIdx.slice(0, 8)) {
+    uStarPos.push(decorVec(i))
+    uStarFlux.push(decor.flux[i])
+  }
+  while (uStarPos.length < 13) {
+    uStarPos.push(new THREE.Vector3(1e4, 1e4, 1e4))
+    uStarFlux.push(0)
   }
 
   const lineMat = new THREE.ShaderMaterial({
@@ -831,7 +905,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const rect = { left: 0, top: 0, width: 1, height: 1 }
 
   const materials = [starMat, lineMat, fieldMat]
-  const geometries = [starGeo, lineGeo, fieldGeo]
+  const geometries = [starGeo, decorGeo, lineGeo, fieldGeo]
   if (hazeMat) materials.push(hazeMat)
 
   const accentInk = new THREE.Color("#6a3bd4")
@@ -1089,8 +1163,11 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   }
 
   const revealCurve = (t: number) => (reduced ? 1 : Math.pow(clamp01(t / CONFIG.reveal.starsSec), 0.6))
+  const TRACE_TOTAL = 1 + (LIBRA_LINES.length - 1) * CONFIG.lines.traceStagger
   const traceCurve = (t: number) =>
-    reduced ? 1 : clamp01((t - CONFIG.reveal.starsSec * 0.5) / CONFIG.reveal.linesSec)
+    reduced
+      ? TRACE_TOTAL
+      : clamp01((t - CONFIG.reveal.starsSec * 0.5) / CONFIG.reveal.linesSec) * TRACE_TOTAL
 
   const pulseHead = (t: number) => {
     if (pulseSeg < 0 || reduced) return -1
