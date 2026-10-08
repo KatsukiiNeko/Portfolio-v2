@@ -102,7 +102,7 @@ const CONFIG = {
     deadzonePx: 4,
   },
 
-  parallax: { camera: 0.12, fieldFollow: 0.03, damping: 3.0, radius: 0.22 },
+  parallax: { camera: 0.12, fieldFollow: 0.03, decorStaticFollow: 0.015, decorFollow: 0.06, damping: 3.0, radius: 0.22 },
 
   sway: { yawDeg: 2.2, pitchDeg: 1.4, periodsSec: [47, 71] },
 
@@ -477,8 +477,10 @@ function buildPrimary(spikesOn: boolean): StarBuild {
 
 // Faint decorative stars scattered around the figure (own layer, no lines, dimmer than
 // any primary). The brightest among them act as secondary light sources for the figure.
-function buildDecor(count: number): StarBuild {
+// The first `staticCount` stars ignore drag entirely; the rest drift very slightly.
+function buildDecor(count: number): StarBuild & { staticCount: number } {
   const rng = mulberry32(CONFIG.seed + 2)
+  const staticCount = count - Math.max(1, Math.round(count * 0.25))
   const positions = new Float32Array(count * 3)
   const flux = new Float32Array(count)
   const seeds = new Float32Array(count)
@@ -499,7 +501,7 @@ function buildDecor(count: number): StarBuild {
     tints[i * 3 + 2] = c.b
   }
 
-  return { positions, flux, seeds, tints, spikes, count }
+  return { positions, flux, seeds, tints, spikes, count, staticCount }
 }
 
 type LineBuild = {
@@ -685,7 +687,9 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const gFig = new THREE.Group()
   const gCreative = new THREE.Group()
   pivot.add(gFig, gCreative)
-  root.add(pivot)
+  const gDecorStatic = new THREE.Group()
+  const gDecorDrift = new THREE.Group()
+  root.add(pivot, gDecorStatic, gDecorDrift)
   scene.add(root)
 
   const stars = buildPrimary(tier.spikes)
@@ -697,12 +701,17 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   starGeo.setAttribute("aSpike", new THREE.BufferAttribute(stars.spikes, 1))
 
   const decor = buildDecor(tier.decor)
-  const decorGeo = new THREE.BufferGeometry()
-  decorGeo.setAttribute("position", new THREE.BufferAttribute(decor.positions, 3))
-  decorGeo.setAttribute("aFlux", new THREE.BufferAttribute(decor.flux, 1))
-  decorGeo.setAttribute("aSeed", new THREE.BufferAttribute(decor.seeds, 1))
-  decorGeo.setAttribute("aTint", new THREE.BufferAttribute(decor.tints, 3))
-  decorGeo.setAttribute("aSpike", new THREE.BufferAttribute(decor.spikes, 1))
+  const mkDecorGeo = (offset: number, n: number) => {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute("position", new THREE.BufferAttribute(decor.positions.slice(offset * 3, (offset + n) * 3), 3))
+    g.setAttribute("aFlux", new THREE.BufferAttribute(decor.flux.slice(offset, offset + n), 1))
+    g.setAttribute("aSeed", new THREE.BufferAttribute(decor.seeds.slice(offset, offset + n), 1))
+    g.setAttribute("aTint", new THREE.BufferAttribute(decor.tints.slice(offset * 3, (offset + n) * 3), 3))
+    g.setAttribute("aSpike", new THREE.BufferAttribute(decor.spikes.slice(offset, offset + n), 1))
+    return g
+  }
+  const decorGeoStatic = mkDecorGeo(0, decor.staticCount)
+  const decorGeoDrift = mkDecorGeo(decor.staticCount, decor.count - decor.staticCount)
 
   const lightIdx = Array.from(decor.flux.keys()).sort((a, b) => decor.flux[b] - decor.flux[a])
   const decorVec = (i: number) => new THREE.Vector3(decor.positions[i * 3], decor.positions[i * 3 + 1], decor.positions[i * 3 + 2])
@@ -754,9 +763,13 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   starPts.frustumCulled = false
   gFig.add(starPts)
 
-  const decorPts = new THREE.Points(decorGeo, starMat)
-  decorPts.frustumCulled = false
-  gFig.add(decorPts)
+  const decorStatic = new THREE.Points(decorGeoStatic, starMat)
+  decorStatic.frustumCulled = false
+  gDecorStatic.add(decorStatic)
+
+  const decorDrift = new THREE.Points(decorGeoDrift, starMat)
+  decorDrift.frustumCulled = false
+  gDecorDrift.add(decorDrift)
 
   const lb = buildLines(CONFIG.lines)
   const lineGeo = new THREE.BufferGeometry()
@@ -905,7 +918,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const rect = { left: 0, top: 0, width: 1, height: 1 }
 
   const materials = [starMat, lineMat, fieldMat]
-  const geometries = [starGeo, decorGeo, lineGeo, fieldGeo]
+  const geometries = [starGeo, decorGeoStatic, decorGeoDrift, lineGeo, fieldGeo]
   if (hazeMat) materials.push(hazeMat)
 
   const accentInk = new THREE.Color("#6a3bd4")
@@ -1126,6 +1139,16 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       pivot.rotation.y * CONFIG.parallax.fieldFollow,
       0,
     )
+    gDecorStatic.rotation.set(
+      pivot.rotation.x * CONFIG.parallax.decorStaticFollow,
+      pivot.rotation.y * CONFIG.parallax.decorStaticFollow,
+      0,
+    )
+    gDecorDrift.rotation.set(
+      pivot.rotation.x * CONFIG.parallax.decorFollow,
+      pivot.rotation.y * CONFIG.parallax.decorFollow,
+      0,
+    )
 
     const hasPointer = pointerTarget.x < 8 && !coarse && !reduced && dt > 0
     if (hasPointer) {
@@ -1252,6 +1275,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       drag.pitch = 0
       pivot.rotation.set(0, 0, 0)
       fieldPts.rotation.set(0, 0, 0)
+      gDecorStatic.rotation.set(0, 0, 0)
+      gDecorDrift.rotation.set(0, 0, 0)
       step(0)
     } else {
       startLoop()
