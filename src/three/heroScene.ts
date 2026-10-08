@@ -1,109 +1,134 @@
 import * as THREE from "three"
 
 /**
- * "Signal lattice" — the hero scene.
- *
- * One dark faceted core, an incomplete topology lattice, a sparse node graph,
- * three off-axis irregular orbits and a micro field. Everything tunable lives
- * in CONFIG below. Layout reads no DOM inside the animation loop; the loop is
- * delta-time driven and pauses off-screen / when the tab is hidden.
+ * "The Scales" — hero scene. Real Libra constellation, deep space look.
+ * Stars are emitters (no scene lights); lines and haze are lit by them in
+ * figure-local space. Yaw/pitch drag with inertia and autonomous return to
+ * the canonical front view. Reduced motion = one static composed frame.
  */
 
 export type HeroThree = { destroy: () => void }
 
 type Tier = "desktop" | "tablet" | "mobile"
-type Breakpoint = Tier
 type Rng = () => number
+
+/* ------------------------------------------------------------------ *
+ * CONSTELLATION DATA (ground truth — never distort)
+ * ------------------------------------------------------------------ */
+
+type StarDef = {
+  name: string
+  desig: string
+  mag: number
+  bv: number
+  x: number
+  y: number
+  z: number
+  tint: string
+}
+
+const LIBRA_STARS = {
+  beta: { name: "Zubeneschamali", desig: "β Lib", mag: 2.61, bv: -0.071, x: -0.069, y: 1.0, z: -0.05, tint: "#edf3ff" },
+  alpha2: { name: "Zubenelgenubi", desig: "α2 Lib", mag: 2.75, bv: 0.147, x: 0.54, y: 0.331, z: 0.3, tint: "#f3f6ff" },
+  sigma: { name: "Brachium", desig: "σ Lib", mag: 3.25, bv: 1.674, x: 0.207, y: -0.557, z: 0.1, tint: "#ffedde" },
+  upsilon: { name: "", desig: "υ Lib", mag: 3.6, bv: 1.361, x: -0.509, y: -0.836, z: -0.25, tint: "#fff0e5" },
+  tau: { name: "", desig: "τ Lib", mag: 3.66, bv: -0.177, x: -0.54, y: -1.0, z: -0.35, tint: "#ebf1ff" },
+  gamma: { name: "Zubenelhakrabi", desig: "γ Lib", mag: 3.91, bv: 1.007, x: -0.507, y: 0.463, z: -0.15, tint: "#fff5ed" },
+  theta: { name: "", desig: "θ Lib", mag: 4.13, bv: 1.003, x: -0.931, y: 0.261, z: -0.1, tint: "#fff5ed" },
+  iota: { name: "", desig: "ι Lib", mag: 4.54, bv: -0.071, x: 0.035, y: -0.021, z: 0.15, tint: "#edf3ff" },
+} satisfies Record<string, StarDef>
+
+const SIX = ["beta", "alpha2", "sigma", "upsilon", "tau", "gamma"] as const
+
+const LIBRA_LINES: [keyof typeof LIBRA_STARS, keyof typeof LIBRA_STARS][] = [
+  ["sigma", "alpha2"],
+  ["alpha2", "beta"],
+  ["beta", "gamma"],
+  ["gamma", "upsilon"],
+  ["upsilon", "tau"],
+  ["alpha2", "gamma"],
+]
+
+/* faint catalog extras (not part of the line figure), mag 5.1–5.9 */
+const FAINT_HIP = [
+  { x: 0.42, y: 0.86, z: -0.4, mag: 5.5, tint: "#f4f1ea" },
+  { x: 0.72, y: -0.62, z: -0.3, mag: 5.9, tint: "#efe9ea" },
+  { x: -0.88, y: -0.36, z: -0.2, mag: 5.1, tint: "#f0ede4" },
+  { x: -0.24, y: 0.66, z: -0.35, mag: 5.6, tint: "#f2f0f7" },
+  { x: 0.94, y: 0.12, z: -0.45, mag: 5.3, tint: "#f5f1e8" },
+  { x: -0.66, y: 0.84, z: -0.28, mag: 5.8, tint: "#f1eef4" },
+]
 
 /* ------------------------------------------------------------------ *
  * CONFIG
  * ------------------------------------------------------------------ */
 
 const CONFIG = {
-  seed: 0x516e17,
+  seed: 20251008,
+
+  figScale: 1.6, // figure height 2 → 3.2 world units
+  camera: { fov: 38, near: 0.1, far: 60 },
 
   palette: {
-    core: 0x262633,
-    coreFace: 0x814de5,
-    shell: 0x6a5aa4,
-    graph: 0xa47ef0,
-    nodeHot: 0xe9e2ff,
-    orbit: 0x6e30e3,
-    particle: 0x9a83e6,
-    key: 0xffffff,
-    rim: 0x814de5,
-    fill: 0x8ea6cc,
-    envTop: 0x2b3044,
-    envHorizon: 0x51446f,
-    envBottom: 0x0a0a10,
+    starWhite: "#f4f6ff",
+    violet: "#814de5",
+    violetLight: "#a47ef0",
+    violetDeep: "#6e30e3",
+    highlight: "#efe8ff",
+    dustGrey: "#9aa0b8",
   },
 
-  camera: { fov: 40, z: 8.6, near: 0.1, far: 60 },
+  sweep: { baseSize: 46, fieldSize: 16 },
+
+  twinkle: { ampBright: 0.06, ampDim: 0.16, burstAmp: 0.3 },
+
+  drag: {
+    sensitivity: 1.0,
+    maxYaw: 70, // deg
+    maxPitch: 35, // deg
+    friction: 3.5,
+    minFling: 0.25, // rad/s
+    stopSpeed: 0.02,
+    returnToFront: true,
+    returnDelay: 3.5, // s
+    returnRate: 1.8,
+    deadzonePx: 4,
+  },
+
+  // fieldFollow ≈ 0: real star-field depth is effectively infinite — the
+  // background must NOT rotate with the figure (only camera parallax moves it).
+  parallax: { camera: 0.12, fieldFollow: 0.03, damping: 3.0, radius: 0.22 },
+
+  sway: { yawDeg: 2.2, pitchDeg: 1.4, periodsSec: [47, 71] },
+
+  lighting: { exposure: 1.15, haloR0: 0.35, hazeAlpha: 0.006 },
+
+  lines: { widthPx: 1.4, gap: 0.05, alpha: 0.55, traceDur: 1.0, traceStagger: 0.16 },
+
+  pulse: { enabled: true, periodSec: 8.0 },
+
+  haze: { periodSec: 20, wob: 0.1 },
+
+  reveal: { starsSec: 1.4, linesSec: 1.0, fieldDelay: 1.6, fieldSec: 1.0 },
 
   tiers: {
-    // dpr cap · nodes · particles · orbits · draw-call budget
-    desktop: { dpr: 1.75, coreDetail: 1, shellNodes: 96, graphNodes: 52, particles: 560, orbits: 3, pulse: true, antialias: true, pointMul: 1 },
-    tablet: { dpr: 1.5, coreDetail: 1, shellNodes: 72, graphNodes: 36, particles: 320, orbits: 3, pulse: false, antialias: true, pointMul: 1.15 },
-    mobile: { dpr: 1.25, coreDetail: 0, shellNodes: 50, graphNodes: 20, particles: 160, orbits: 2, pulse: false, antialias: false, pointMul: 1.45 },
+    // fill = fraction of the HERO canvas height the figure occupies;
+    // the figure is centered on the drag column (computed from layout at resize).
+    desktop: { dprCap: 1.75, field: 520, spikes: true, haze: true, fill: 0.5, extraFaint: 6, sizeMul: 1 },
+    tablet: { dprCap: 1.5, field: 300, spikes: true, haze: true, fill: 0.55, extraFaint: 4, sizeMul: 1 },
+    mobile: { dprCap: 1.25, field: 170, spikes: false, haze: false, fill: 0.35, extraFaint: 2, sizeMul: 1.14 },
   },
 
-  /** explicit composition per breakpoint: world offset + uniform scale */
-  composition: {
-    desktop: { scale: 1, x: 0.18, y: 0.04 },
-    tablet: { scale: 0.94, x: 0.05, y: 0.03 },
-    mobile: { scale: 0.92, x: 0, y: -0.02 },
-  },
-
-  form: {
-    coreRadius: 1.12,
-    coreAmp: 0.19,
-    shell: { rMin: 1.62, rMax: 1.86, density: 1.25, degree: 3 },
-    graph: { rMin: 1.88, rMax: 2.3, density: 1.15, degree: 3 },
-    field: { rMin: 2, rMax: 3.4 },
-    orbits: [
-      { a: 2.16, b: 1.6, segments: 240, tilt: [1.18, 0.2, 0.05], center: [0.07, -0.06, 0.03], wobble: 0.035 },
-      { a: 2.4, b: 2.16, segments: 240, tilt: [0.44, 1.34, 0.34], center: [-0.11, 0.08, -0.05], wobble: 0.022 },
-      { a: 1.88, b: 1.04, segments: 240, tilt: [1.98, 0.62, -0.48], center: [0.04, 0.11, 0.07], wobble: 0.05 },
-    ],
-  },
-
-  motion: {
-    coreSpin: 0.042, // rad/s about the tilted axis
-    coreTilt: 0.38,
-    shellTilt: -0.62,
-    shellSpin: -0.026, // counter-drift
-    fieldSpin: 0.008,
-    breatheAmp: 0.013,
-    breathePeriod: 10.5, // seconds
-    orbitRate: [0.05, -0.034, 0.041], // precession, per orbit
-    nodeDrift: 0.03,
-    fieldDrift: 0.075,
-    entranceMs: 900,
-  },
-
-  /** per-layer damped parallax strength */
-  parallax: {
-    camera: 0.09,
-    core: 0.05,
-    shell: 0.1,
-    graph: 0.14,
-    orbits: 0.12,
-    field: 0.2,
-    lerp: 0.055,
-  },
-
-  proximity: { radius: 1.05, push: 0.1, glow: 0.5 },
-
-  scroll: { fade: 0.65, depth: 1, falloff: 0.6, minIntensity: 0.35 },
-
-  quality: { sampleFrames: 60, frameBudgetMs: 22, dprStep: 0.35 },
+  quality: { warmupFrames: 20, sampleFrames: 60, frameMs: 22, dprStep: 0.25, recheckMs: 2000 },
 }
 
+const FIG_SCALE = CONFIG.figScale
+
 /* ------------------------------------------------------------------ *
- * small helpers (all allocation happens here, at init — never in the loop)
+ * pure helpers
  * ------------------------------------------------------------------ */
 
-function makeRng(seed: number): Rng {
+function mulberry32(seed: number): Rng {
   let a = seed >>> 0
   return () => {
     a = (a + 0x6d2b79f5) | 0
@@ -113,339 +138,454 @@ function makeRng(seed: number): Rng {
   }
 }
 
-type Lobe = { x: number; y: number; z: number; freq: number; amp: number; phase: number }
+const MAG_REF = 2.61
+const magToFlux = (mag: number) => Math.pow(10, -0.4 * (mag - MAG_REF))
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
-/** a handful of random directional sine lobes = cheap seeded value noise */
-function makeLobes(rng: Rng, count: number): Lobe[] {
-  const lobes: Lobe[] = []
-  for (let i = 0; i < count; i++) {
-    const z = rng() * 2 - 1
-    const t = rng() * Math.PI * 2
-    const r = Math.sqrt(Math.max(0, 1 - z * z))
-    lobes.push({
-      x: r * Math.cos(t),
-      y: r * Math.sin(t),
-      z,
-      freq: 1.8 + i * 1.7,
-      amp: (rng() - 0.5) * 0.17 * (1 / (1 + i * 0.6)),
-      phase: rng() * Math.PI * 2,
-    })
-  }
-  return lobes
+function softClamp(v: number, limit: number): number {
+  const a = Math.abs(v)
+  const knee = limit * 0.7
+  if (a <= knee) return v
+  return Math.sign(v) * (knee + (limit - knee) * Math.tanh((a - knee) / (limit - knee)))
 }
 
-function lobesAt(lobes: Lobe[], x: number, y: number, z: number): number {
-  let s = 0
-  for (let i = 0; i < lobes.length; i++) {
-    const l = lobes[i]
-    s += l.amp * Math.sin((x * l.x + y * l.y + z * l.z) * l.freq + l.phase)
-  }
-  return s
+/** B−V → Kelvin (Ballesteros). */
+function bvToTemp(bv: number): number {
+  const b = Math.max(-0.33, Math.min(2, bv))
+  return 4600 * (1 / (0.92 * b + 1.7) + 1 / (0.92 * b + 0.62))
 }
 
-/* ------------------------------------------------------------------ *
- * geometry builders
- * ------------------------------------------------------------------ */
-
-/** faceted, deliberately asymmetric polyhedron from a seeded displacement */
-function createCoreGeometry(rng: Rng, detail: number): THREE.BufferGeometry {
-  const lobes = makeLobes(rng, 4)
-  const geo = new THREE.IcosahedronGeometry(CONFIG.form.coreRadius, detail)
-  const pos = geo.attributes.position as THREE.BufferAttribute
-
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i)
-    const y = pos.getY(i)
-    const z = pos.getZ(i)
-    const len = Math.hypot(x, y, z) || 1
-    const dx = x / len
-    const dy = y / len
-    const dz = z / len
-    const n = Math.max(-1, Math.min(1, lobesAt(lobes, dx, dy, dz) / 0.17))
-    const r = CONFIG.form.coreRadius * (1 + n * CONFIG.form.coreAmp)
-    // non-uniform scale: the silhouette is never symmetric
-    pos.setXYZ(i, dx * r * 1.11, dy * r * 0.89, dz * r)
+/** Kelvin → sRGB tint, ~70% toward white (real stars read nearly white). */
+function kelvinToSrgb(k: number): THREE.Color {
+  const t = k / 100
+  let r: number
+  let g: number
+  let b: number
+  if (t <= 6.6) {
+    r = 1
+    g = Math.max(0, Math.min(1, 0.99 * Math.log(t * 10) - 0.63))
+    b = t <= 1.9 ? 0 : Math.max(0, Math.min(1, 1.385 * Math.log(t * 10 - 1) - 3.05))
+  } else {
+    r = Math.max(0, Math.min(1, 1.292 * Math.pow(t * 10 - 6, -0.1332)))
+    g = Math.max(0, Math.min(1, 1.129 * Math.pow(t * 10 - 6, -0.0755)))
+    b = 1
   }
-  pos.needsUpdate = true
-  geo.computeVertexNormals()
-  return geo
-}
-
-/** 1-2 camera-facing faces lifted off the core to fake per-face emissive */
-function createEmissiveGeometry(src: THREE.BufferGeometry, rng: Rng): THREE.BufferGeometry | null {
-  const pos = src.attributes.position as THREE.BufferAttribute
-  const faceCount = pos.count / 3
-  const a = new THREE.Vector3()
-  const b = new THREE.Vector3()
-  const c = new THREE.Vector3()
-  const ab = new THREE.Vector3()
-  const ac = new THREE.Vector3()
-  const n = new THREE.Vector3()
-  const centres: number[] = []
-
-  for (let f = 0; f < faceCount; f++) {
-    a.fromBufferAttribute(pos, f * 3)
-    b.fromBufferAttribute(pos, f * 3 + 1)
-    c.fromBufferAttribute(pos, f * 3 + 2)
-    ab.subVectors(b, a)
-    ac.subVectors(c, a)
-    n.crossVectors(ab, ac).normalize()
-    if (n.z > 0.3) centres.push(f)
-  }
-  if (centres.length < 2) return null
-
-  const first = centres[Math.floor(rng() * centres.length)]
-  a.fromBufferAttribute(pos, first * 3)
-  let best = centres[0]
-  let bestD = -1
-  for (const f of centres) {
-    b.fromBufferAttribute(pos, f * 3)
-    const d = a.distanceToSquared(b)
-    if (f !== first && d > bestD) {
-      bestD = d
-      best = f
-    }
-  }
-
-  const out = new Float32Array(18)
-  let o = 0
-  for (const f of [first, best]) {
-    a.fromBufferAttribute(pos, f * 3)
-    b.fromBufferAttribute(pos, f * 3 + 1)
-    c.fromBufferAttribute(pos, f * 3 + 2)
-    ab.subVectors(b, a)
-    ac.subVectors(c, a)
-    n.crossVectors(ab, ac).normalize()
-    for (const v of [a, b, c]) {
-      out[o++] = v.x + n.x * 0.025
-      out[o++] = v.y + n.y * 0.025
-      out[o++] = v.z + n.z * 0.025
-    }
-  }
-
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute("position", new THREE.BufferAttribute(out, 3))
-  return geo
-}
-
-type Graph = { positions: Float32Array; edges: Float32Array }
-
-/**
- * Points on an uneven shell + greedy nearest-neighbour edges under a max
- * distance and max degree cap. Used twice: dense/dim for the topology shell,
- * sparse/bright for the node graph.
- */
-function createGraph(
-  rng: Rng,
-  count: number,
-  rMin: number,
-  rMax: number,
-  density: number,
-  maxDegree: number,
-): Graph {
-  const lobes = makeLobes(rng, 3)
-  const golden = Math.PI * (3 - Math.sqrt(5))
-  const mid = (rMin + rMax) / 2
-  const half = (rMax - rMin) / 2
-  const pos = new Float32Array(count * 3)
-
-  for (let i = 0; i < count; i++) {
-    const y = 1 - (i / Math.max(1, count - 1)) * 2
-    const rad = Math.sqrt(Math.max(0, 1 - y * y))
-    const th = golden * i + rng() * 0.14
-    let dx = Math.cos(th) * rad + (rng() - 0.5) * 0.08
-    let dy = y + (rng() - 0.5) * 0.08
-    let dz = Math.sin(th) * rad + (rng() - 0.5) * 0.08
-    const len = Math.hypot(dx, dy, dz) || 1
-    dx /= len
-    dy /= len
-    dz /= len
-    const n = Math.max(-1, Math.min(1, lobesAt(lobes, dx, dy, dz) / 0.15))
-    const r = mid + n * half
-    pos[i * 3] = dx * r
-    pos[i * 3 + 1] = dy * r
-    pos[i * 3 + 2] = dz * r
-  }
-
-  const maxDist = Math.sqrt((4 * Math.PI * mid * mid) / count) * density
-
-  // candidate pairs sorted by distance, accepted greedily under the caps
-  type Pair = { d: number; i: number; j: number }
-  const pairs: Pair[] = []
-  for (let i = 0; i < count; i++) {
-    for (let j = i + 1; j < count; j++) {
-      const dx = pos[i * 3] - pos[j * 3]
-      const dy = pos[i * 3 + 1] - pos[j * 3 + 1]
-      const dz = pos[i * 3 + 2] - pos[j * 3 + 2]
-      const d = Math.sqrt(dx * dx + dy * dy + dz * dz)
-      if (d < maxDist) pairs.push({ d, i, j })
-    }
-  }
-  pairs.sort((p, q) => p.d - q.d)
-
-  const deg = new Uint8Array(count)
-  const edgeList: number[] = []
-  for (const p of pairs) {
-    if (deg[p.i] >= maxDegree || deg[p.j] >= maxDegree) continue
-    deg[p.i]++
-    deg[p.j]++
-    edgeList.push(p.i, p.j)
-  }
-
-  const edges = new Float32Array(edgeList.length * 6)
-  for (let e = 0; e < edgeList.length; e++) {
-    const node = edgeList[e]
-    edges[e * 6] = pos[node * 3]
-    edges[e * 6 + 1] = pos[node * 3 + 1]
-    edges[e * 6 + 2] = pos[node * 3 + 2]
-    const other = edgeList[e ^ 1]
-    edges[e * 6 + 3] = pos[other * 3]
-    edges[e * 6 + 4] = pos[other * 3 + 1]
-    edges[e * 6 + 5] = pos[other * 3 + 2]
-  }
-
-  return { positions: pos, edges }
-}
-
-type OrbitSpec = (typeof CONFIG.form.orbits)[number]
-
-function orbitPoint(spec: OrbitSpec, th: number, out: THREE.Vector3): THREE.Vector3 {
-  const r =
-    1 +
-    spec.wobble * Math.sin(th * 3 + spec.tilt[0]) +
-    spec.wobble * 0.6 * Math.sin(th * 5 - spec.tilt[1])
-  return out.set(Math.cos(th) * spec.a * r, Math.sin(th) * spec.b * r, 0)
-}
-
-function createOrbitGeometry(spec: OrbitSpec, segments: number): THREE.BufferGeometry {
-  const arr = new Float32Array((segments + 1) * 3)
-  const v = new THREE.Vector3()
-  for (let i = 0; i <= segments; i++) {
-    orbitPoint(spec, (i / segments) * Math.PI * 2, v)
-    arr[i * 3] = v.x
-    arr[i * 3 + 1] = v.y
-    arr[i * 3 + 2] = v.z
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute("position", new THREE.BufferAttribute(arr, 3))
-  return geo
+  const c = new THREE.Color(r, g, b)
+  c.lerp(new THREE.Color(1, 1, 1), 0.7)
+  return c
 }
 
 /* ------------------------------------------------------------------ *
- * shaders — one program serves nodes, particles and the data pulse
+ * SHADERS
  * ------------------------------------------------------------------ */
 
-const POINT_VERT = /* glsl */ `
-  attribute float aSeed;
-  attribute float aSize;
-  attribute float aBright;
+const STAR_VERT = /* glsl */ `
+attribute float aFlux;
+attribute float aSeed;
+attribute vec3 aTint;
+attribute float aSpike;
 
-  uniform float uTime;
-  uniform float uAmp;
-  uniform float uScale;
-  uniform float uSizeMul;
-  uniform vec3 uPointer;
-  uniform float uProx;
-  uniform float uRadius;
-  uniform float uPush;
-  uniform float uGlow;
-  uniform vec3 uColor;
-  uniform vec3 uHot;
+uniform float uTime;
+uniform float uPixelRatio;
+uniform float uSizeBase;
+uniform float uRefDist;
+uniform float uTwinkle;
+uniform float uReveal;
+uniform vec2 uPointerNDC;
+uniform float uAspect;
+uniform float uPointerRadius;
+uniform float uMaxPoint;
+uniform float uMode;   // 0 = dark/additive, 1 = light/pigment
+uniform vec3 uInk;     // light-mode star core pigment
 
-  varying vec3 vColor;
-  varying float vAlpha;
+varying vec3 vTint;
+varying float vI;
+varying float vSpike;
 
-  void main() {
-    float ph = aSeed * 6.28318;
-    vec3 p = position;
-    p += vec3(
-      sin(uTime * 0.21 + ph),
-      cos(uTime * 0.17 + ph * 1.43),
-      sin(uTime * 0.13 + ph * 2.11)
-    ) * uAmp;
+float hash11(float n) { return fract(sin(n * 127.1) * 43758.5453); }
 
-    vec4 wp = modelMatrix * vec4(p, 1.0);
-    float d = distance(wp.xyz, uPointer);
-    float prox = smoothstep(uRadius, 0.0, d) * uProx;
-    wp.xyz += normalize(wp.xyz - uPointer + vec3(1e-4)) * prox * uPush;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * mv;
 
-    vec4 mv = viewMatrix * wp;
-    gl_Position = projectionMatrix * mv;
-    gl_PointSize = aSize * uSizeMul * uScale / max(0.001, -mv.z);
+  // entrance: stars ignite in brightness order (β first)
+  float st = (1.0 - clamp(aFlux, 0.0, 1.0)) * 0.5;
+  float seq = clamp((uReveal - st) / 0.5, 0.0, 1.0);
 
-    vColor = mix(uColor, uHot, aBright);
-    vAlpha = 0.3 + 0.5 * aSeed + aBright * 0.4 + prox * uGlow;
-  }
+  // scintillation: three incommensurate sines, never visibly looping
+  float s = aSeed * 6.2831;
+  float tw = 0.50 * sin(uTime * (3.5 + 6.0 * aSeed) + s * 3.0)
+           + 0.30 * sin(uTime * (7.0 + 7.0 * aSeed) + s * 7.0)
+           + 0.20 * sin(uTime * (1.6 + 2.0 * aSeed) + s * 11.0);
+  float amp = mix(0.16, 0.06, clamp(aFlux, 0.0, 1.0));
+  // rare brief flicker (~0.3 s) every 6–15 s, phase offset per star
+  float period = 6.0 + 9.0 * hash11(aSeed * 91.7);
+  float tt = uTime + aSeed * period;
+  float cycle = floor(tt / period);
+  float ph = tt - cycle * period;
+  float fire = step(0.45, hash11(cycle + aSeed * 57.3));
+  float burst = fire * exp(-pow((ph - 0.25) / 0.14, 2.0)) * 0.30;
+  float tw01 = 1.0 + uTwinkle * (amp * tw + burst * (tw * 0.5 + 0.5));
+
+  // pointer proximity in screen space (aspect corrected)
+  vec2 ndc = gl_Position.xy / gl_Position.w;
+  float hasPointer = step(abs(uPointerNDC.x), 4.0);
+  float near = smoothstep(uPointerRadius, 0.0, length((ndc - uPointerNDC) * vec2(uAspect, 1.0))) * hasPointer;
+
+  vI = (0.35 + 0.65 * pow(aFlux, 0.7)) * tw01 * seq * (1.0 + 0.35 * near);
+  vTint = aTint;
+  vSpike = aSpike;
+
+  float size = uSizeBase * (0.40 + 0.60 * sqrt(aFlux)) * (1.0 + 0.10 * (tw01 - 1.0) + 0.15 * near);
+  gl_PointSize = clamp(size * uPixelRatio * (uRefDist / -mv.z), 2.0, uMaxPoint);
+}
 `
 
-const POINT_FRAG = /* glsl */ `
-  uniform float uAlpha;
-  varying vec3 vColor;
-  varying float vAlpha;
+const STAR_FRAG = /* glsl */ `
+uniform vec3 uHalo;
+uniform float uExposure;
+uniform float uMode;
+uniform vec3 uInk;
 
-  void main() {
-    vec2 c = gl_PointCoord - vec2(0.5);
-    float d = dot(c, c);
-    if (d > 0.25) discard;
-    float a = 1.0 - smoothstep(0.02, 0.25, d);
-    gl_FragColor = vec4(vColor, clamp(a * vAlpha, 0.0, 1.0) * uAlpha);
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
-  }
+varying vec3 vTint;
+varying float vI;
+varying float vSpike;
+
+void main() {
+  vec2 p = (gl_PointCoord - 0.5) * 2.0;
+  float r = length(p);
+  if (r > 1.0) discard;
+  float edge = 1.0 - smoothstep(0.70, 1.0, r);
+  float core = exp(-pow(r / 0.11, 2.0));
+  float glow = exp(-r * 4.5) * edge;
+  vec2 q = abs(p);
+  float spikes = (exp(-q.x * 38.0) * exp(-q.y * 2.6) + exp(-q.y * 38.0) * exp(-q.x * 2.6)) * edge * vSpike;
+
+  // spikes read blue against a light page — whiten them in dark, ink them in light
+  vec3 spikeTint = mix(mix(vTint, vec3(1.0), 0.75), uInk, uMode);
+  vec3 coreTint = mix(vTint, uInk, uMode);
+
+  // halo forced to zero at the sprite edge — no rim, no black squares
+  vec3 col = coreTint * (core * 1.7 + glow * 0.30)
+           + spikeTint * spikes * 0.13
+           + uHalo * glow * mix(0.45, 0.35, uMode);
+  col *= vI;
+  col = 1.0 - exp(-col * uExposure);
+  gl_FragColor = vec4(col, 1.0);
+  #include <colorspace_fragment>
+  // premultiplied alpha derived AFTER gamma → valid for additive and over alike
+  gl_FragColor.a = clamp(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0, 1.0);
+}
 `
 
-function createPointMaterial(opts: {
-  color: THREE.Color
-  hot: THREE.Color
-  amp: number
-  alpha: number
-  sizeMul: number
-}): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    vertexShader: POINT_VERT,
-    fragmentShader: POINT_FRAG,
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      uTime: { value: 0 },
-      uAmp: { value: opts.amp },
-      uScale: { value: 256 },
-      uSizeMul: { value: opts.sizeMul },
-      uPointer: { value: new THREE.Vector3(999, 999, 999) },
-      uProx: { value: 0 },
-      uRadius: { value: CONFIG.proximity.radius },
-      uPush: { value: CONFIG.proximity.push },
-      uGlow: { value: CONFIG.proximity.glow },
-      uColor: { value: opts.color },
-      uHot: { value: opts.hot },
-      uAlpha: { value: opts.alpha },
-    },
+const LINE_VERT = /* glsl */ `
+attribute vec3 aOther;
+attribute float aSide;
+attribute float aAlong;
+attribute float aSeg;
+attribute float aDelay;
+attribute float aDur;
+
+uniform vec2 uResolution;
+uniform float uWidthPx;
+uniform float uTrace;
+
+varying vec3 vLocal;
+varying float vAlong;
+varying float vAcross;
+varying float vSeg;
+varying float vProg;
+
+void main() {
+  vec4 c0 = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 c1 = projectionMatrix * modelViewMatrix * vec4(aOther, 1.0);
+  vec2 dir = normalize((c1.xy / c1.w - c0.xy / c0.w) * uResolution);
+  vec2 nrm = vec2(-dir.y, dir.x);
+  gl_Position = c0;
+  gl_Position.xy += nrm * aSide * (uWidthPx / uResolution) * c0.w;
+  vLocal = position;
+  vAlong = aAlong;
+  vAcross = aSide;
+  vSeg = aSeg;
+  vProg = clamp((uTrace - aDelay) / aDur, 0.0, 1.0);
+}
+`
+
+const LINE_FRAG = /* glsl */ `
+uniform vec3 uLine;
+uniform vec3 uHighlight;
+uniform float uLineAlpha;
+uniform float uR0;
+uniform float uPulseEnabled;
+uniform vec2 uPulse;
+uniform vec3 uStarPos[8];
+uniform float uStarFlux[8];
+
+varying vec3 vLocal;
+varying float vAlong;
+varying float vAcross;
+varying float vSeg;
+varying float vProg;
+
+void main() {
+  // local illumination: Σ flux_i / (1 + d²/r0²) — lines glow near bright stars
+  float L = 0.0;
+  for (int i = 0; i < 8; i++) {
+    float d = distance(vLocal, uStarPos[i]);
+    L += uStarFlux[i] / (1.0 + (d * d) / (uR0 * uR0));
+  }
+  float ends = smoothstep(0.0, 0.18, vAlong) * (1.0 - smoothstep(0.82, 1.0, vAlong));
+  float across = 1.0 - smoothstep(0.35, 1.0, abs(vAcross));
+  float seen = 1.0 - smoothstep(vProg - 0.06, vProg, vAlong);
+  float head = exp(-pow((vAlong - vProg) / 0.04, 2.0)) * step(0.001, vProg) * step(vProg, 0.999);
+
+  float a = uLineAlpha * (0.55 + 0.9 * min(L, 1.6)) * ends * across * seen;
+  vec3 col = uLine * a;
+
+  // one faint signal pulse riding the selected segment
+  float pulse = exp(-pow((vAlong - uPulse.y) / 0.05, 2.0))
+              * step(0.5, uPulseEnabled) * (1.0 - step(0.5, abs(vSeg - uPulse.x)));
+  col += uHighlight * (head * 0.5 + pulse * 0.8) * across;
+
+  col = 1.0 - exp(-col * 1.15);
+  gl_FragColor = vec4(col, 1.0);
+  #include <colorspace_fragment>
+  gl_FragColor.a = clamp(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0, 1.0);
+}
+`
+
+const FIELD_VERT = /* glsl */ `
+attribute float aSeed;
+attribute vec3 aTint;
+attribute float aFlux;
+
+uniform float uTime;
+uniform float uPixelRatio;
+uniform float uSizeBase;
+uniform float uRefDist;
+uniform float uTwinkle;
+uniform float uReveal;
+
+varying vec3 vTint;
+varying float vI;
+
+void main() {
+  vec3 p = position;
+  float s = aSeed * 6.2831;
+  p.x += sin(uTime * 0.031 + s) * 0.012;
+  p.y += cos(uTime * 0.023 + s * 1.7) * 0.012;
+
+  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  gl_Position = projectionMatrix * mv;
+
+  // weaker twinkle for the field (×0.5) — background should feel calm
+  float tw = 0.6 * sin(uTime * (2.2 + 3.5 * aSeed) + s * 3.0) + 0.4 * sin(uTime * (5.5 + 4.0 * aSeed) + s * 7.0);
+  float tw01 = 1.0 + uTwinkle * 0.08 * tw;
+
+  vI = (0.14 + 0.5 * pow(aFlux, 0.9)) * tw01 * uReveal;
+  vTint = aTint;
+
+  float size = uSizeBase * (0.28 + 0.42 * sqrt(aFlux));
+  gl_PointSize = clamp(size * uPixelRatio * (uRefDist / -mv.z), 1.5, 7.0);
+}
+`
+
+const FIELD_FRAG = /* glsl */ `
+uniform float uExposure;
+uniform vec3 uTintMul;
+varying vec3 vTint;
+varying float vI;
+
+void main() {
+  vec2 p = (gl_PointCoord - 0.5) * 2.0;
+  float r = length(p);
+  if (r > 1.0) discard;
+  float edge = 1.0 - smoothstep(0.55, 1.0, r);
+  float core = exp(-pow(r / 0.13, 2.0));
+  float glow = exp(-r * 4.0) * edge;
+
+  vec3 col = vTint * uTintMul * (core * 1.3 + glow * 0.18) * vI;
+  col = 1.0 - exp(-col * uExposure);
+  gl_FragColor = vec4(col, 1.0);
+  #include <colorspace_fragment>
+  gl_FragColor.a = clamp(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0, 1.0);
+}
+`
+
+const HAZE_VERT = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`
+
+const HAZE_FRAG = /* glsl */ `
+uniform vec3 uColor;
+uniform float uAlpha;
+varying vec2 vUv;
+
+void main() {
+  vec2 p = (vUv - 0.5) * 2.0;
+  float r = length(p);
+  float a = exp(-r * r * 3.4) * uAlpha * (1.0 - smoothstep(0.55, 0.95, r));
+  gl_FragColor = vec4(uColor * a, 1.0);
+  #include <colorspace_fragment>
+  gl_FragColor.a = clamp(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0, 1.0);
+}
+`
+
+type StarBuild = {
+  positions: Float32Array
+  flux: Float32Array
+  seeds: Float32Array
+  tints: Float32Array
+  spikes: Float32Array
+  count: number
+  localFlux: number[]
+}
+
+function buildStars(six: readonly string[], faintCount: number, spikesOn: boolean): StarBuild {
+  const rng = mulberry32(CONFIG.seed)
+  const count = six.length + faintCount
+  const positions = new Float32Array(count * 3)
+  const flux = new Float32Array(count)
+  const seeds = new Float32Array(count)
+  const tints = new Float32Array(count * 3)
+  const spikes = new Float32Array(count)
+  const localFlux: number[] = []
+
+  six.forEach((key, i) => {
+    const d = LIBRA_STARS[key as keyof typeof LIBRA_STARS]
+    positions[i * 3] = d.x * FIG_SCALE
+    positions[i * 3 + 1] = d.y * FIG_SCALE
+    positions[i * 3 + 2] = d.z * FIG_SCALE
+    flux[i] = magToFlux(d.mag)
+    seeds[i] = rng()
+    const c = kelvinToSrgb(bvToTemp(d.bv))
+    tints[i * 3] = c.r
+    tints[i * 3 + 1] = c.g
+    tints[i * 3 + 2] = c.b
+    spikes[i] = spikesOn && d.mag < 3.0 ? Math.min(1, flux[i]) : 0 // β + α2 only
+    localFlux.push(flux[i])
   })
+
+  for (let j = 0; j < faintCount; j++) {
+    const e = FAINT_HIP[j]
+    const i = six.length + j
+    positions[i * 3] = e.x * FIG_SCALE
+    positions[i * 3 + 1] = e.y * FIG_SCALE
+    positions[i * 3 + 2] = e.z * FIG_SCALE
+    flux[i] = magToFlux(e.mag)
+    seeds[i] = rng()
+    const c = new THREE.Color(e.tint)
+    tints[i * 3] = c.r
+    tints[i * 3 + 1] = c.g
+    tints[i * 3 + 2] = c.b
+    spikes[i] = 0
+    localFlux.push(flux[i])
+  }
+
+  return { positions, flux, seeds, tints, spikes, count, localFlux }
 }
 
-function createPoints(
-  positions: Float32Array,
-  sizes: Float32Array,
-  seeds: Float32Array,
-  bright: Float32Array,
-  material: THREE.ShaderMaterial,
-): THREE.Points {
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3))
-  geo.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1))
-  geo.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1))
-  geo.setAttribute("aBright", new THREE.BufferAttribute(bright, 1))
-  const pts = new THREE.Points(geo, material)
-  pts.frustumCulled = false // shader drift can leave the authored bounding sphere
-  return pts
+type LineBuild = {
+  positions: Float32Array
+  others: Float32Array
+  sides: Float32Array
+  alongs: Float32Array
+  segs: Float32Array
+  delays: Float32Array
+  durs: Float32Array
 }
 
-function linePositions(graph: Graph): Float32Array {
-  return graph.edges
+function buildLines(cfg: typeof CONFIG.lines): LineBuild {
+  const n = LIBRA_LINES.length
+  const positions = new Float32Array(n * 4 * 3)
+  const others = new Float32Array(n * 4 * 3)
+  const sides = new Float32Array(n * 4)
+  const alongs = new Float32Array(n * 4)
+  const segs = new Float32Array(n * 4)
+  const delays = new Float32Array(n * 4)
+  const durs = new Float32Array(n * 4)
+
+  for (let s = 0; s < n; s++) {
+    const [aKey, bKey] = LIBRA_LINES[s]
+    const a = LIBRA_STARS[aKey]
+    const b = LIBRA_STARS[bKey]
+    const dx = (b.x - a.x) * FIG_SCALE
+    const dy = (b.y - a.y) * FIG_SCALE
+    const dz = (b.z - a.z) * FIG_SCALE
+    const len = Math.hypot(dx, dy, dz)
+    const g = cfg.gap
+    const sx = a.x * FIG_SCALE + (dx / len) * g
+    const sy = a.y * FIG_SCALE + (dy / len) * g
+    const sz = a.z * FIG_SCALE + (dz / len) * g
+    const ex = b.x * FIG_SCALE - (dx / len) * g
+    const ey = b.y * FIG_SCALE - (dy / len) * g
+    const ez = b.z * FIG_SCALE - (dz / len) * g
+    const delay = s * cfg.traceStagger
+    const dur = cfg.traceDur
+
+    // 4 corners of the ribbon: [start,-1], [start,+1], [end,-1], [end,+1]
+    for (let v = 0; v < 4; v++) {
+      const i = s * 4 + v
+      const isEnd = v >= 2
+      positions[i * 3] = isEnd ? ex : sx
+      positions[i * 3 + 1] = isEnd ? ey : sy
+      positions[i * 3 + 2] = isEnd ? ez : sz
+      others[i * 3] = isEnd ? sx : ex
+      others[i * 3 + 1] = isEnd ? sy : ey
+      others[i * 3 + 2] = isEnd ? sz : ez
+      sides[i] = v === 0 || v === 2 ? -1 : 1
+      alongs[i] = isEnd ? 1 : 0
+      segs[i] = s
+      delays[i] = delay
+      durs[i] = dur
+    }
+  }
+  return { positions, others, sides, alongs, segs, delays, durs }
+}
+
+type FieldBuild = { positions: Float32Array; seeds: Float32Array; tints: Float32Array; flux: Float32Array }
+
+/** Three depth shells behind the figure, seeded so composition never varies. */
+function buildField(count: number, camZ: number, aspect: number): FieldBuild {
+  const rng = mulberry32(CONFIG.seed + 1)
+  const positions = new Float32Array(count * 3)
+  const seeds = new Float32Array(count)
+  const tints = new Float32Array(count * 3)
+  const flux = new Float32Array(count)
+  const base = new THREE.Color(CONFIG.palette.starWhite)
+  const warm = new THREE.Color("#ffe9cf")
+  const cool = new THREE.Color("#dfe8ff")
+  const grey = new THREE.Color(CONFIG.palette.dustGrey)
+  const c = new THREE.Color()
+
+  const fovHalf = THREE.MathUtils.degToRad(CONFIG.camera.fov / 2)
+  for (let i = 0; i < count; i++) {
+    // three depth shells, all strictly behind the figure, inside the frustum
+    const shell = i % 3
+    const dist = camZ + 5 + shell * 6 + rng() * 6 // ≥5 units behind the figure plane
+    const halfH = dist * Math.tan(fovHalf) * 1.3
+    const halfW = halfH * Math.max(aspect, 1) * 1.15 // covers the full hero width
+    positions[i * 3] = (rng() * 2 - 1) * halfW
+    positions[i * 3 + 1] = (rng() * 2 - 1) * halfH
+    positions[i * 3 + 2] = camZ - dist // camera looks down −z from z = camZ
+    seeds[i] = rng()
+    flux[i] = Math.pow(rng(), 2.2) // mostly faint, few brighter
+    const pick = rng()
+    c.copy(pick < 0.7 ? base : pick < 0.9 ? warm : cool)
+    c.lerp(grey, 0.5)
+    tints[i * 3] = c.r
+    tints[i * 3 + 1] = c.g
+    tints[i * 3 + 2] = c.b
+  }
+  return { positions, seeds, tints, flux }
 }
 
 /* ------------------------------------------------------------------ *
- * init
+ * RUNTIME
  * ------------------------------------------------------------------ */
 
 let active: { host: HTMLElement; destroy: () => void } | null = null
@@ -457,12 +597,7 @@ function pickTier(): Tier {
   return "desktop"
 }
 
-function pickBreakpoint(): Breakpoint {
-  const w = window.innerWidth
-  if (w >= 1024) return "desktop"
-  if (w >= 768) return "tablet"
-  return "mobile"
-}
+type DragState = "idle" | "dragging" | "inertia"
 
 export function initHeroThree(host: HTMLElement): HeroThree | null {
   // idempotent: a second call never creates a second canvas or loop
@@ -471,337 +606,428 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     active.destroy()
     active = null
   }
+  if (typeof window === "undefined") return null
 
   const tierName = pickTier()
   const tier = CONFIG.tiers[tierName]
-  const rng = makeRng(CONFIG.seed + tierName.length)
-  const disposables: { dispose(): void }[] = []
+
+  const heroEl = (host.closest("#hero") as HTMLElement | null) ?? host
+  const fovHalfRad = THREE.MathUtils.degToRad(CONFIG.camera.fov / 2)
+  let baseCamZ = FIG_SCALE / Math.tan(fovHalfRad) / tier.fill
+
+  /* ---- renderer ---- */
 
   let renderer: THREE.WebGLRenderer
   try {
     renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: tier.antialias,
+      premultipliedAlpha: true,
+      antialias: false,
       powerPreference: "high-performance",
       stencil: false,
-      depth: true,
+      depth: false,
     })
   } catch {
-    return null // WebGL unavailable → static CSS fallback, page unaffected
+    return null // WebGL unavailable → CSS fallback, page unaffected
   }
+  const canvas = renderer.domElement
+  canvas.className = "hero-canvas"
+  canvas.style.pointerEvents = "none" // drag lives on the column host only
+  canvas.style.position = "absolute"
+  canvas.style.inset = "0"
+  canvas.style.zIndex = "-1" // behind hero text; -1 only works if #hero isolates
+  canvas.style.display = "block"
+  host.style.touchAction = "pan-y" // vertical touch gestures must scroll the page
+  heroEl.style.isolation = "isolate" // own stacking context → canvas stays above body bg, below content
+  heroEl.appendChild(canvas)
 
-  let dpr = Math.min(window.devicePixelRatio || 1, tier.dpr)
-  renderer.setPixelRatio(dpr)
+  // pixel ratio · palette (linear under ColorManagement)
+  const dprState = { value: Math.min(window.devicePixelRatio || 1, tier.dprCap) }
+  renderer.setPixelRatio(dprState.value)
   renderer.setClearColor(0x000000, 0)
   renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.15
 
-  const canvas = renderer.domElement
-  canvas.style.pointerEvents = "none"
-  canvas.style.touchAction = "pan-y" // vertical gestures must still scroll
-  canvas.style.display = "block"
-  host.appendChild(canvas)
+  const halo = new THREE.Color(CONFIG.palette.violet)
+  const lineColor = new THREE.Color(CONFIG.palette.violetLight)
+  const violetDeep = new THREE.Color(CONFIG.palette.violetDeep)
+  const highlight = new THREE.Color(CONFIG.palette.highlight)
+
+  /* ---- scene graph ---- */
 
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, CONFIG.camera.near, CONFIG.camera.far)
-  camera.position.set(0, 0, CONFIG.camera.z)
-
-  /* ---- environment + lighting -------------------------------------- */
-
-  const envData = new Uint8Array(16 * 8 * 4)
-  const top = new THREE.Color(CONFIG.palette.envTop)
-  const horizon = new THREE.Color(CONFIG.palette.envHorizon)
-  const bottom = new THREE.Color(CONFIG.palette.envBottom)
-  for (let y = 0; y < 8; y++) {
-    const v = y / 7 // 0 = top row
-    const c = v < 0.5 ? top.clone().lerp(horizon, v * 2) : horizon.clone().lerp(bottom, (v - 0.5) * 2)
-    for (let x = 0; x < 16; x++) {
-      const i = (y * 16 + x) * 4
-      envData[i] = Math.round(c.r * 255)
-      envData[i + 1] = Math.round(c.g * 255)
-      envData[i + 2] = Math.round(c.b * 255)
-      envData[i + 3] = 255
-    }
-  }
-  const envSource = new THREE.DataTexture(envData, 16, 8, THREE.RGBAFormat)
-  envSource.mapping = THREE.EquirectangularReflectionMapping
-  envSource.colorSpace = THREE.SRGBColorSpace
-  envSource.needsUpdate = true
-
-  const pmrem = new THREE.PMREMGenerator(renderer)
-  const envTarget = pmrem.fromEquirectangular(envSource)
-  scene.environment = envTarget.texture
-  scene.environmentIntensity = 0.95
-  envSource.dispose()
-  pmrem.dispose()
-
-  const key = new THREE.DirectionalLight(CONFIG.palette.key, 1.9)
-  key.position.set(4, 5, 6)
-  const rim = new THREE.DirectionalLight(CONFIG.palette.rim, 3.1)
-  rim.position.set(-4.5, -1.5, -4)
-  const fill = new THREE.DirectionalLight(CONFIG.palette.fill, 0.62)
-  fill.position.set(3, -3.5, 5)
-  scene.add(key, rim, fill)
-
-  /* ---- layer groups ------------------------------------------------ */
 
   const root = new THREE.Group()
-  const gCore = new THREE.Group()
-  const gShell = new THREE.Group()
-  const gGraph = new THREE.Group()
-  const gOrbits = new THREE.Group()
-  const gField = new THREE.Group()
-  root.add(gCore, gShell, gGraph, gOrbits, gField)
+  const pivot = new THREE.Group()
+  pivot.rotation.order = "YXZ"
+  const gFig = new THREE.Group()
+  const gCreative = new THREE.Group()
+  pivot.add(gFig, gCreative)
+  root.add(pivot)
   scene.add(root)
 
-  /* core ------------------------------------------------------------- */
-  const coreGeo = createCoreGeometry(rng, tier.coreDetail)
-  const coreMat = new THREE.MeshStandardMaterial({
-    color: CONFIG.palette.core,
-    metalness: 0.5,
-    roughness: 0.38,
-    flatShading: true,
-    envMapIntensity: 1.1,
-  })
-  const core = new THREE.Mesh(coreGeo, coreMat)
-  gCore.add(core)
-  disposables.push(coreGeo, coreMat)
+  /* ---- stars ---- */
 
-  const faceGeo = createEmissiveGeometry(coreGeo, rng)
-  if (faceGeo) {
-    const faceMat = new THREE.MeshBasicMaterial({
-      color: CONFIG.palette.coreFace,
-      transparent: true,
-      opacity: 0.22,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    })
-    gCore.add(new THREE.Mesh(faceGeo, faceMat))
-    disposables.push(faceGeo, faceMat)
+  const six = tier.spikes ? [...SIX, "theta" as const, "iota" as const] : [...SIX]
+  const stars = buildStars(six, tier.extraFaint, tier.spikes)
+  const starGeo = new THREE.BufferGeometry()
+  starGeo.setAttribute("position", new THREE.BufferAttribute(stars.positions, 3))
+  starGeo.setAttribute("aFlux", new THREE.BufferAttribute(stars.flux, 1))
+  starGeo.setAttribute("aSeed", new THREE.BufferAttribute(stars.seeds, 1))
+  starGeo.setAttribute("aTint", new THREE.BufferAttribute(stars.tints, 3))
+  starGeo.setAttribute("aSpike", new THREE.BufferAttribute(stars.spikes, 1))
+
+  let maxPoint = 64
+  try {
+    const gl = renderer.getContext() as WebGLRenderingContext
+    const range = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) as Float32Array | null
+    if (range && range.length >= 2) maxPoint = Math.min(128, Math.max(16, range[1]))
+  } catch {
+    /* default cap */
   }
 
-  /* topology shell — edges only, roughly half the lattice pruned ----- */
-  const shellGraph = createGraph(
-    makeRng(CONFIG.seed + 1),
-    tier.shellNodes,
-    CONFIG.form.shell.rMin,
-    CONFIG.form.shell.rMax,
-    CONFIG.form.shell.density,
-    CONFIG.form.shell.degree,
-  )
-  const shellGeo = new THREE.BufferGeometry()
-  shellGeo.setAttribute("position", new THREE.BufferAttribute(linePositions(shellGraph), 3))
-  const shellMat = new THREE.LineBasicMaterial({
-    color: CONFIG.palette.shell,
+  const starMat = new THREE.ShaderMaterial({
+    vertexShader: STAR_VERT,
+    fragmentShader: STAR_FRAG,
     transparent: true,
-    opacity: 0.13,
     depthWrite: false,
+    depthTest: false,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
+    uniforms: {
+      uTime: { value: 0 },
+      uPixelRatio: { value: dprState.value },
+      uSizeBase: { value: CONFIG.sweep.baseSize * tier.sizeMul },
+      uRefDist: { value: 6 },
+      uTwinkle: { value: 1 },
+      uReveal: { value: 0 },
+      uPointerNDC: { value: new THREE.Vector2(9, 9) },
+      uAspect: { value: 1 },
+      uPointerRadius: { value: CONFIG.parallax.radius },
+      uMaxPoint: { value: maxPoint },
+      uHalo: { value: halo },
+      uExposure: { value: CONFIG.lighting.exposure },
+      uMode: { value: 0 },
+      uInk: { value: new THREE.Color("#33245c") }, // light-mode star pigment
+    },
   })
-  gShell.add(new THREE.LineSegments(shellGeo, shellMat))
-  disposables.push(shellGeo, shellMat)
+  const starPts = new THREE.Points(starGeo, starMat)
+  starPts.frustumCulled = false
+  gFig.add(starPts)
 
-  /* node graph ------------------------------------------------------- */
-  const graph = createGraph(
-    makeRng(CONFIG.seed + 2),
-    tier.graphNodes,
-    CONFIG.form.graph.rMin,
-    CONFIG.form.graph.rMax,
-    CONFIG.form.graph.density,
-    CONFIG.form.graph.degree,
-  )
-  const edgeGeo = new THREE.BufferGeometry()
-  edgeGeo.setAttribute("position", new THREE.BufferAttribute(linePositions(graph), 3))
-  const edgeMat = new THREE.LineBasicMaterial({
-    color: CONFIG.palette.graph,
+  /* ---- lines (ribbon quads) ---- */
+
+  const lb = buildLines(CONFIG.lines)
+  const lineGeo = new THREE.BufferGeometry()
+  lineGeo.setAttribute("position", new THREE.BufferAttribute(lb.positions, 3))
+  lineGeo.setAttribute("aOther", new THREE.BufferAttribute(lb.others, 3))
+  lineGeo.setAttribute("aSide", new THREE.BufferAttribute(lb.sides, 1))
+  lineGeo.setAttribute("aAlong", new THREE.BufferAttribute(lb.alongs, 1))
+  lineGeo.setAttribute("aSeg", new THREE.BufferAttribute(lb.segs, 1))
+  lineGeo.setAttribute("aDelay", new THREE.BufferAttribute(lb.delays, 1))
+  lineGeo.setAttribute("aDur", new THREE.BufferAttribute(lb.durs, 1))
+  const idx: number[] = []
+  for (let s = 0; s < LIBRA_LINES.length; s++) {
+    const b = s * 4
+    idx.push(b, b + 1, b + 2, b + 2, b + 1, b + 3)
+  }
+  lineGeo.setIndex(idx)
+
+  // star illumination data, figure-local space (static — never updated per frame)
+  const uStarPos: THREE.Vector3[] = []
+  const uStarFlux: number[] = []
+  six.forEach(key => {
+    const d = LIBRA_STARS[key as keyof typeof LIBRA_STARS]
+    uStarPos.push(new THREE.Vector3(d.x * FIG_SCALE, d.y * FIG_SCALE, d.z * FIG_SCALE))
+    uStarFlux.push(magToFlux(d.mag))
+  })
+  while (uStarPos.length < 8) {
+    uStarPos.push(new THREE.Vector3(1e4, 1e4, 1e4))
+    uStarFlux.push(0)
+  }
+
+  const lineMat = new THREE.ShaderMaterial({
+    vertexShader: LINE_VERT,
+    fragmentShader: LINE_FRAG,
     transparent: true,
-    opacity: 0.38,
     depthWrite: false,
+    depthTest: false,
+    side: THREE.DoubleSide,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
+    uniforms: {
+      uResolution: { value: new THREE.Vector2(1, 1) },
+      uWidthPx: { value: 1.2 },
+      uTrace: { value: 0 },
+      uLine: { value: lineColor },
+      uHighlight: { value: highlight },
+      uLineAlpha: { value: CONFIG.lines.alpha },
+      uR0: { value: CONFIG.lighting.haloR0 },
+      uPulseEnabled: { value: 0 },
+      uPulse: { value: new THREE.Vector2(-1, -1) },
+      uStarPos: { value: uStarPos },
+      uStarFlux: { value: uStarFlux },
+    },
   })
-  gGraph.add(new THREE.LineSegments(edgeGeo, edgeMat))
-  disposables.push(edgeGeo, edgeMat)
+  const lines = new THREE.Mesh(lineGeo, lineMat)
+  lines.frustumCulled = false
+  gFig.add(lines)
 
-  const n = tier.graphNodes
-  const nodeSize = new Float32Array(n)
-  const nodeSeed = new Float32Array(n)
-  const nodeBright = new Float32Array(n)
-  const hotA = Math.floor(rng() * n)
-  const hotB = Math.floor(rng() * n)
-  for (let i = 0; i < n; i++) {
-    nodeSize[i] = 0.085 + rng() * 0.05
-    nodeSeed[i] = rng()
-    nodeBright[i] = i === hotA || i === hotB ? 1 : 0
-  }
-  const nodeMat = createPointMaterial({
-    color: new THREE.Color(CONFIG.palette.graph),
-    hot: new THREE.Color(CONFIG.palette.nodeHot),
-    amp: CONFIG.motion.nodeDrift,
-    alpha: 0.95,
-    sizeMul: tier.pointMul,
-  })
-  const nodePoints = createPoints(graph.positions, nodeSize, nodeSeed, nodeBright, nodeMat)
-  gGraph.add(nodePoints)
-  disposables.push(nodePoints.geometry, nodeMat)
+  /* ---- haze (only on tiers that opt in) ---- */
 
-  /* orbits — irregular, off-centre, each precessing at its own rate --- */
-  const orbitSegs = tierName === "mobile" ? 120 : 240
-  const orbitGroups: THREE.Group[] = []
-  const orbitLines: THREE.Line[] = []
-  for (let i = 0; i < tier.orbits; i++) {
-    const spec = CONFIG.form.orbits[i]
-    const geo = createOrbitGeometry(spec, orbitSegs)
-    const mat = new THREE.LineBasicMaterial({
-      color: CONFIG.palette.orbit,
+  let hazeMat: THREE.ShaderMaterial | null = null
+  if (tier.haze) {
+    const hazeGeo = new THREE.PlaneGeometry(5.5, 5.5)
+    hazeMat = new THREE.ShaderMaterial({
+      vertexShader: HAZE_VERT,
+      fragmentShader: HAZE_FRAG,
       transparent: true,
-      opacity: 0.5,
       depthWrite: false,
+      depthTest: false,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneFactor,
+      uniforms: {
+        uColor: { value: violetDeep },
+        uAlpha: { value: 0 },
+      },
     })
-    const line: THREE.Line = new THREE.Line(geo, mat)
-    const grp = new THREE.Group()
-    grp.position.set(spec.center[0], spec.center[1], spec.center[2])
-    grp.rotation.set(spec.tilt[0], spec.tilt[1], spec.tilt[2])
-    grp.add(line)
-    gOrbits.add(grp)
-    orbitGroups.push(grp)
-    orbitLines.push(line)
-    disposables.push(geo, mat)
+    const haze = new THREE.Mesh(hazeGeo, hazeMat)
+    haze.position.set(0.1, 0.55, -1.5)
+    haze.renderOrder = -1
+    haze.frustumCulled = false
+    root.add(haze) // NOT inside the pivot — atmosphere must not rotate with the drag
   }
 
-  /* one data pulse riding the first orbit ---------------------------- */
-  let pulse: THREE.Points | null = null
-  let pulseAttr: THREE.BufferAttribute | null = null
-  if (tier.pulse && orbitGroups.length) {
-    const pMat = createPointMaterial({
-      color: new THREE.Color(CONFIG.palette.orbit),
-      hot: new THREE.Color(CONFIG.palette.nodeHot),
-      amp: 0,
-      alpha: 1,
-      sizeMul: tier.pointMul * 1.6,
-    })
-    pulse = createPoints(
-      new Float32Array(3),
-      new Float32Array([0.13]),
-      new Float32Array([1]),
-      new Float32Array([1]),
-      pMat,
-    )
-    pulseAttr = pulse.geometry.attributes.position as THREE.BufferAttribute
-    orbitGroups[0].add(pulse)
-    disposables.push(pulse.geometry, pMat)
-  }
+  /* ---- background field (counter-parallax, lives outside the pivot) ---- */
 
-  /* micro field ------------------------------------------------------ */
-  const m = tier.particles
-  const fPos = new Float32Array(m * 3)
-  const fSize = new Float32Array(m)
-  const fSeed = new Float32Array(m)
-  const fBright = new Float32Array(m)
-  const fieldRng = makeRng(CONFIG.seed + 3)
-  const v = new THREE.Vector3()
-  for (let i = 0; i < m; i++) {
-    const z = fieldRng() * 2 - 1
-    const th = fieldRng() * Math.PI * 2
-    const rad = Math.sqrt(Math.max(0, 1 - z * z))
-    const r = CONFIG.form.field.rMin + fieldRng() * (CONFIG.form.field.rMax - CONFIG.form.field.rMin)
-    v.set(rad * Math.cos(th) * r, z * r * 0.8, rad * Math.sin(th) * r)
-    fPos[i * 3] = v.x
-    fPos[i * 3 + 1] = v.y
-    fPos[i * 3 + 2] = v.z
-    fSize[i] = 0.045 + fieldRng() * 0.04
-    fSeed[i] = fieldRng()
-    fBright[i] = 0
-  }
-  const fieldMat = createPointMaterial({
-    color: new THREE.Color(CONFIG.palette.particle),
-    hot: new THREE.Color(CONFIG.palette.particle),
-    amp: CONFIG.motion.fieldDrift,
-    alpha: 0.7,
-    sizeMul: tier.pointMul,
+  const fb = buildField(
+    tier.field,
+    baseCamZ,
+    Math.max(1, heroEl.clientWidth) / Math.max(1, heroEl.clientHeight),
+  )
+  const fieldGeo = new THREE.BufferGeometry()
+  fieldGeo.setAttribute("position", new THREE.BufferAttribute(fb.positions, 3))
+  fieldGeo.setAttribute("aSeed", new THREE.BufferAttribute(fb.seeds, 1))
+  fieldGeo.setAttribute("aTint", new THREE.BufferAttribute(fb.tints, 3))
+  fieldGeo.setAttribute("aFlux", new THREE.BufferAttribute(fb.flux, 1))
+  const fieldMat = new THREE.ShaderMaterial({
+    vertexShader: FIELD_VERT,
+    fragmentShader: FIELD_FRAG,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
+    uniforms: {
+      uTime: { value: 0 },
+      uPixelRatio: { value: dprState.value },
+      uSizeBase: { value: CONFIG.sweep.fieldSize },
+      uRefDist: { value: 6 },
+      uTwinkle: { value: 1 },
+      uReveal: { value: 0 },
+      uExposure: { value: CONFIG.lighting.exposure },
+      uTintMul: { value: new THREE.Color(1, 1, 1) },
+    },
   })
-  const field = createPoints(fPos, fSize, fSeed, fBright, fieldMat)
-  gField.add(field)
-  disposables.push(field.geometry, fieldMat)
+  const fieldPts = new THREE.Points(fieldGeo, fieldMat)
+  fieldPts.frustumCulled = false
+  scene.add(fieldPts)
 
-  const pointMaterials = [nodeMat, fieldMat]
-  if (pulse) pointMaterials.push(pulse.material as THREE.ShaderMaterial)
-
-  /* ---- sizing / composition ---------------------------------------- */
-
-  const applySize = () => {
-    const w = Math.max(1, host.clientWidth)
-    const h = Math.max(1, host.clientHeight)
-    camera.aspect = w / h
-    camera.updateProjectionMatrix()
-    renderer.setSize(w, h)
-    const scale = renderer.domElement.height * 0.5
-    for (const mat of pointMaterials) mat.uniforms.uScale.value = scale
-    if (reduced) step(0) // static mode must still re-render on resize
-  }
-
-  const applyComposition = () => {
-    const c = CONFIG.composition[pickBreakpoint()]
-    root.position.set(c.x, c.y, 0)
-    root.scale.setScalar(c.scale)
-  }
-
-  /* ---- state ------------------------------------------------------- */
+  /* ---- state ---- */
 
   const coarse = window.matchMedia("(pointer: coarse)").matches
   const reduceMql = window.matchMedia("(prefers-reduced-motion: reduce)")
   let reduced = reduceMql.matches
 
   let time = 0
-  let progress = 0
-  let intensity = 1
-  let pointerCur = { x: 0, y: 0 }
-  let pointerTarget = { x: 0, y: 0 }
-  let pointerNdc = { x: 0, y: 0 }
-  let rect = { left: 0, top: 0, width: 1, height: 1 }
+  let heroProgress = 0
   let heroVisible = true
   let docHidden = document.visibilityState === "hidden"
   let contextLost = false
   let raf = 0
   let prevNow = 0
-  let entranceAt = performance.now()
-  let entranceApplied = false
+  let pulseSeg = -1
+  let emaFrameMs = 16
+  let govState: "warmup" | "measure" = "warmup"
+  let govCount = 0
+  let lastStepDown = 0
 
-  const ndc = new THREE.Vector3()
-  const rayDir = new THREE.Vector3()
-  const pointerWorld = new THREE.Vector3(999, 999, 999)
+  let surfaceW = 1
+  let surfaceH = 1
+  const pointerTarget = { x: 9, y: 9 }
+  const pointerCur = { x: 9, y: 9 }
+  const rect = { left: 0, top: 0, width: 1, height: 1 }
 
-  const heroEl = (host.closest("#hero") as HTMLElement | null) ?? host
-  const baseZ = CONFIG.camera.z
+  const materials = [starMat, lineMat, fieldMat]
+  const geometries = [starGeo, lineGeo, fieldGeo]
+  if (hazeMat) materials.push(hazeMat)
 
-  /* ---- interaction -------------------------------------------------- */
+  /* ---- theme (dark = additive glow, light = pigment/over) ---- */
 
-  const applyMotionMode = () => {
-    const proxOn = !coarse && !reduced ? 1 : 0
-    for (const mat of pointMaterials) mat.uniforms.uProx.value = proxOn
-    if (reduced) {
-      stopLoop()
-      canvas.style.transition = "none"
-      canvas.style.opacity = "1"
-      step(0)
-    } else {
-      entranceAt = performance.now()
-      entranceApplied = false
-      canvas.style.transition = reduced ? "none" : `opacity ${CONFIG.motion.entranceMs}ms ease-out`
-      canvas.style.opacity = "0"
-      requestAnimationFrame(() => {
-        canvas.style.opacity = "1"
-      })
-      startLoop()
+  const accentInk = new THREE.Color("#6a3bd4") // light-theme accent
+  const isLight = () => document.documentElement.getAttribute("data-theme") === "light"
+
+  const applyTheme = () => {
+    const light = isLight()
+    starMat.uniforms.uMode.value = light ? 1 : 0
+    fieldMat.uniforms.uTintMul.value.setScalar(light ? 0.6 : 1) // dust must read on white
+    lineMat.uniforms.uLine.value = light ? accentInk : lineColor
+    lineMat.uniforms.uHighlight.value = light ? accentInk : highlight
+    // fragments emit premultiplied alpha → dark adds (One/One), light composites over
+    const dst = light ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor
+    for (const m of materials) {
+      m.blendDst = dst
+      m.needsUpdate = true
     }
+    if (reduced) step(0)
+  }
+
+  /* ---- sizing / composition ---- */
+
+  const applyComposition = () => {
+    const aspect = surfaceW / surfaceH
+    const visH = 2 * baseCamZ * Math.tan(fovHalfRad)
+    const visW = visH * aspect
+    // center the figure on the drag column (host), measured at resize only
+    const hr = heroEl.getBoundingClientRect()
+    const nr = host.getBoundingClientRect()
+    const ndcX = (((nr.left + nr.width / 2) - (hr.left + hr.width / 2)) / Math.max(1, hr.width)) * 2
+    const ndcY = -((((nr.top + nr.height / 2) - (hr.top + hr.height / 2)) / Math.max(1, hr.height)) * 2)
+    root.position.set((ndcX * visW) / 2, (ndcY * visH) / 2, 0)
+  }
+
+  const applySize = () => {
+    surfaceW = Math.max(1, heroEl.clientWidth) // canvas covers the whole hero
+    surfaceH = Math.max(1, heroEl.clientHeight)
+    const aspect = surfaceW / surfaceH
+
+    camera.aspect = aspect
+    camera.updateProjectionMatrix()
+    renderer.setSize(surfaceW, surfaceH)
+
+    const res = renderer.getDrawingBufferSize(new THREE.Vector2())
+    lineMat.uniforms.uResolution.value.copy(res)
+    lineMat.uniforms.uWidthPx.value = CONFIG.lines.widthPx * dprState.value
+    starMat.uniforms.uPixelRatio.value = dprState.value
+    fieldMat.uniforms.uPixelRatio.value = dprState.value
+    starMat.uniforms.uAspect.value = aspect
+
+    baseCamZ = FIG_SCALE / Math.tan(fovHalfRad) / tier.fill
+    camera.position.z = baseCamZ
+    starMat.uniforms.uRefDist.value = baseCamZ
+    fieldMat.uniforms.uRefDist.value = baseCamZ
+    applyComposition()
+
+    if (reduced) step(0)
+  }
+
+  /* ---- drag interactions ---- */
+
+  const drag = {
+    state: "idle" as DragState,
+    rawYaw: 0,
+    rawPitch: 0,
+    vYaw: 0,
+    vPitch: 0,
+    yaw: 0,
+    pitch: 0,
+    idleFor: 0,
+    id: null as number | null,
+    sx: 0,
+    sy: 0,
+    lx: 0,
+    ly: 0,
+    lt: 0,
+    captured: false,
+    pointerDown: false,
+  }
+
+  const radPerPx = () =>
+    (CONFIG.drag.sensitivity * Math.PI * 0.8) /
+    Math.min(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight))
+
+  const updateCursor = (grabbing: boolean) => {
+    host.style.cursor = reduced && !coarse ? "default" : grabbing ? "grabbing" : coarse ? "default" : "grab"
+  }
+
+  const onPointerDown = (e: PointerEvent) => {
+    if (reduced) return
+    if (e.pointerType === "mouse" && e.button !== 0) return
+    if (drag.id !== null) return
+    drag.id = e.pointerId
+    drag.pointerDown = true
+    drag.sx = e.clientX
+    drag.sy = e.clientY
+    drag.vYaw = 0
+    drag.vPitch = 0
+    drag.rawYaw = drag.yaw
+    drag.rawPitch = drag.pitch
+    drag.state = "idle"
+    drag.idleFor = 0
+  }
+
+  const onDragMove = (e: PointerEvent) => {
+    if (reduced) return
+    if (e.pointerId !== drag.id) return
+    if (!drag.captured) {
+      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < CONFIG.drag.deadzonePx) return
+      drag.captured = true
+      drag.state = "dragging"
+      try {
+        host.setPointerCapture(e.pointerId)
+      } catch {
+        /* capture may fail if pointer left — ignore */
+      }
+      drag.lx = e.clientX
+      drag.ly = e.clientY
+      drag.lt = e.timeStamp
+      updateCursor(true)
+      return
+    }
+    const k = radPerPx()
+    const dx = e.clientX - drag.lx
+    const dy = e.clientY - drag.ly
+    const dts = Math.max(1, e.timeStamp - drag.lt) / 1000
+    drag.rawYaw += dx * k
+    if (e.pointerType !== "touch") drag.rawPitch += dy * k
+    drag.vYaw += ((dx * k) / dts - drag.vYaw) * 0.35
+    drag.vPitch += (((e.pointerType !== "touch" ? dy * k : 0) / dts) - drag.vPitch) * 0.35
+    drag.lx = e.clientX
+    drag.ly = e.clientY
+    drag.lt = e.timeStamp
+  }
+
+  const onDragUp = () => {
+    if (drag.state === "dragging") {
+      const speed = Math.hypot(drag.vYaw, drag.vPitch)
+      drag.state = speed > CONFIG.drag.minFling ? "inertia" : "idle"
+      drag.idleFor = 0
+    }
+    drag.id = null
+    drag.captured = false
+    drag.pointerDown = false
+    updateCursor(false)
+  }
+
+  const onPointerLeave = () => {
+    pointerTarget.x = 9
+    pointerTarget.y = 9
   }
 
   const onPointerMove = (e: PointerEvent) => {
-    pointerTarget.x = (e.clientX / window.innerWidth - 0.5) * 2
-    pointerTarget.y = (e.clientY / window.innerHeight - 0.5) * 2
-    pointerNdc.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1
-    pointerNdc.y = -(((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1)
+    pointerTarget.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1
+    pointerTarget.y = -(((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1)
   }
 
-  /* ---- scroll (rAF-throttled, no per-frame layout reads) ------------- */
+  /* ---- scroll (rAF throttled) ---- */
 
   let scrollQueued = false
   const readRect = () => {
@@ -814,18 +1040,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
 
   const applyScroll = () => {
     readRect()
-    const h = Math.max(1, rect.height)
-    progress = Math.min(1, Math.max(0, -rect.top / h))
-    intensity = Math.max(CONFIG.scroll.minIntensity, 1 - CONFIG.scroll.falloff * progress)
-
-    const now = performance.now()
-    if (reduced) return
-    if (now - entranceAt < CONFIG.motion.entranceMs) return
-    if (!entranceApplied) {
-      entranceApplied = true
-      canvas.style.transition = "none"
-    }
-    canvas.style.opacity = String(1 - CONFIG.scroll.fade * progress)
+    heroProgress = clamp01(-rect.top / Math.max(1, rect.height))
   }
 
   const onScroll = () => {
@@ -837,106 +1052,168 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     })
   }
 
-  /* ---- one frame ----------------------------------------------------- */
+  /* ---- per-frame step (order fixed, zero allocation) ---- */
 
-  const P = CONFIG.parallax
-  const M = CONFIG.motion
+  const sway = CONFIG.sway
+  const swayYawW = THREE.MathUtils.degToRad(sway.yawDeg)
+  const swayPitchW = THREE.MathUtils.degToRad(sway.pitchDeg)
+  const TWO_PI = Math.PI * 2
 
   const step = (dt: number) => {
-    time += dt * intensity
+    time += dt
 
-    const px = coarse || reduced ? 0 : pointerCur.x
-    const py = coarse || reduced ? 0 : pointerCur.y
+    // --- 1. drag physics ---
+    const c = CONFIG.drag
+    const maxY = THREE.MathUtils.degToRad(c.maxYaw)
+    const maxP = THREE.MathUtils.degToRad(c.maxPitch)
+    if (drag.state === "inertia") {
+      const f = Math.exp(-c.friction * dt)
+      drag.vYaw *= f
+      drag.vPitch *= f
+      drag.rawYaw += drag.vYaw * dt
+      drag.rawPitch += drag.vPitch * dt
+      if (Math.hypot(drag.vYaw, drag.vPitch) < c.stopSpeed) {
+        drag.state = "idle"
+        drag.idleFor = 0
+      }
+    } else if (drag.state === "idle" && !drag.pointerDown) {
+      drag.idleFor += dt
+      if (c.returnToFront && drag.idleFor > c.returnDelay) {
+        const e = 1 - Math.exp(-c.returnRate * dt)
+        drag.rawYaw += (0 - drag.rawYaw) * e
+        drag.rawPitch += (0 - drag.rawPitch) * e
+      }
+    }
+    drag.rawYaw = Math.max(-maxY * 1.6, Math.min(maxY * 1.6, drag.rawYaw))
+    drag.rawPitch = Math.max(-maxP * 1.6, Math.min(maxP * 1.6, drag.rawPitch))
+    drag.yaw = softClamp(drag.rawYaw, maxY)
+    drag.pitch = softClamp(drag.rawPitch, maxP)
 
-    if (!coarse && !reduced) {
-      pointerCur.x += (pointerTarget.x - pointerCur.x) * P.lerp
-      pointerCur.y += (pointerTarget.y - pointerCur.y) * P.lerp
+    // --- 2. sway (felt, not noticed) ---
+    let swayYaw = 0
+    let swayPitch = 0
+    if (!reduced && dt > 0) {
+      swayYaw = Math.sin((time * TWO_PI) / sway.periodsSec[0]) * swayYawW
+      swayPitch = Math.sin((time * TWO_PI) / sway.periodsSec[1]) * swayPitchW
+    }
+    pivot.rotation.set(drag.pitch + swayPitch, drag.yaw + swayYaw, 0)
+    fieldPts.rotation.set(
+      pivot.rotation.x * CONFIG.parallax.fieldFollow,
+      pivot.rotation.y * CONFIG.parallax.fieldFollow,
+      0,
+    )
+
+    // --- 3. pointer parallax (desktop only, damped) ---
+    const hasPointer = pointerTarget.x < 8 && !coarse && !reduced && dt > 0
+    if (hasPointer) {
+      if (pointerCur.x > 8) pointerCur.x = pointerTarget.x
+      const e = 1 - Math.exp(-CONFIG.parallax.damping * dt)
+      pointerCur.x += (pointerTarget.x - pointerCur.x) * e
+      pointerCur.y += (pointerTarget.y - pointerCur.y) * e
     }
 
-    // core: slow spin about a tilted axis + breathing
-    gCore.rotation.set(M.coreTilt + py * P.core, time * M.coreSpin + px * P.core, 0)
-    const breathe = 1 + Math.sin((time * Math.PI * 2) / M.breathePeriod) * M.breatheAmp
-    gCore.scale.setScalar(breathe)
+    // --- 4. uniforms only ---
+    starMat.uniforms.uTime.value = time
+    starMat.uniforms.uReveal.value = revealCurve(time)
+    starMat.uniforms.uTwinkle.value = reduced || heroProgress > 0.4 ? 0 : 1
+    starMat.uniforms.uPointerNDC.value.set(hasPointer ? pointerCur.x : 9, hasPointer ? pointerCur.y : 9)
+    starMat.uniforms.uExposure.value = CONFIG.lighting.exposure * (1 - heroProgress * 0.7)
 
-    // shell: counter-drift, different speed and tilt
-    gShell.rotation.set(M.shellTilt + py * P.shell, -time * Math.abs(M.shellSpin) + px * P.shell, 0)
+    lineMat.uniforms.uTrace.value = traceCurve(time)
+    lineMat.uniforms.uPulseEnabled.value = pulseSeg >= 0 && !reduced ? 1 : 0
+    lineMat.uniforms.uPulse.value.set(pulseSeg, pulseHead(time))
 
-    // graph: parallax only — the shader drift does the moving
-    gGraph.rotation.set(py * P.graph, px * P.graph, 0)
+    fieldMat.uniforms.uTime.value = time
+    fieldMat.uniforms.uReveal.value = clamp01((time - CONFIG.reveal.fieldDelay) / CONFIG.reveal.fieldSec)
+    fieldMat.uniforms.uTwinkle.value = reduced || heroProgress > 0.4 ? 0 : 1
 
-    // orbits: parallax on the group, precession on each path
-    gOrbits.rotation.set(py * P.orbits, px * P.orbits, 0)
-    for (let i = 0; i < orbitGroups.length; i++) {
-      const spec = CONFIG.form.orbits[i]
-      orbitGroups[i].rotation.set(spec.tilt[0], spec.tilt[1] + time * M.orbitRate[i], spec.tilt[2])
+    if (hazeMat) {
+      hazeMat.uniforms.uAlpha.value =
+        CONFIG.lighting.hazeAlpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.haze.periodSec)) * (1 - heroProgress)
     }
 
-    // field: parallax + a barely-there turn
-    gField.rotation.set(py * P.field, time * M.fieldSpin + px * P.field, 0)
-
-    // camera: damped parallax and a slight depth shift while scrolling
-    camera.position.set(px * P.camera, -py * P.camera, baseZ + progress * CONFIG.scroll.depth)
+    // --- 5. camera orbit-look — position lerped, not directly dragged ---
+    camera.position.x = hasPointer ? pointerCur.x * CONFIG.parallax.camera : 0
+    camera.position.y = hasPointer ? -pointerCur.y * CONFIG.parallax.camera : 0
+    camera.position.z = baseCamZ + heroProgress * 1.4
     camera.lookAt(0, 0, 0)
 
-    // proximity: pointer projected onto the plane at core depth
-    if (!coarse && !reduced) {
-      ndc.set(pointerNdc.x, pointerNdc.y, 0.5).unproject(camera)
-      rayDir.copy(ndc).sub(camera.position).normalize()
-      const denom = rayDir.z
-      if (Math.abs(denom) > 1e-5) {
-        const tPlane = (0 - camera.position.z) / denom
-        pointerWorld.copy(camera.position).addScaledVector(rayDir, tPlane)
-      }
-    } else {
-      pointerWorld.set(999, 999, 999)
-    }
-
-    for (const mat of pointMaterials) {
-      mat.uniforms.uTime.value = time
-      mat.uniforms.uPointer.value.copy(pointerWorld)
-    }
-
-    if (pulse && pulseAttr) {
-      const spec = CONFIG.form.orbits[0]
-      orbitPoint(spec, (time * 0.07 * Math.PI * 2) % (Math.PI * 2), v)
-      pulseAttr.setXYZ(0, v.x, v.y, v.z)
-      pulseAttr.needsUpdate = true
-    }
-
+    // --- 6. render + governor feed ---
     renderer.render(scene, camera)
   }
 
-  /* ---- loop, visibility, adaptive quality ---------------------------- */
+  const revealCurve = (t: number) => (reduced ? 1 : Math.pow(clamp01(t / CONFIG.reveal.starsSec), 0.6))
+  const traceCurve = (t: number) =>
+    reduced ? 1 : clamp01((t - CONFIG.reveal.starsSec * 0.5) / CONFIG.reveal.linesSec)
+
+  const pulseHead = (t: number) => {
+    if (pulseSeg < 0 || reduced) return -1
+    const ph = ((t - 1) % CONFIG.pulse.periodSec) / CONFIG.pulse.periodSec
+    return ph >= 0 && ph <= 0.35 ? ph / 0.35 : -1 // runs for the first 35% of the period
+  }
+
+  const pickPulseSegment = () => {
+    if (!CONFIG.pulse.enabled || reduced) {
+      pulseSeg = -1
+      return
+    }
+    pulseSeg = (pulseSeg + 2) % LIBRA_LINES.length // deterministic walk over the segments
+  }
+
+  let lastPulseChange = 0
+  const updatePulse = (now: number) => {
+    if (time - lastPulseChange > CONFIG.pulse.periodSec) {
+      lastPulseChange = time
+      pickPulseSegment()
+    }
+    // `pulseHead` reads time directly, so nothing else is needed
+    void now
+  }
+
+  /* ---- loop + governor ---- */
+
+  const tick = () => {
+    raf = requestAnimationFrame(tick)
+    if (!heroVisible || docHidden || contextLost) {
+      prevNow = 0
+      return
+    }
+    const now = performance.now()
+    const dt = prevNow ? Math.min((now - prevNow) / 1000, 0.05) : 0.016
+    prevNow = now
+
+    // quality governor: warm-up → average → step down, never up, every 2 s
+    if (govState === "warmup") {
+      govCount++
+      if (govCount >= CONFIG.quality.warmupFrames) {
+        govState = "measure"
+        govCount = 0
+        emaFrameMs = 16
+      }
+    } else {
+      if (dt > 0) emaFrameMs += (dt * 1000 - emaFrameMs) * 0.05
+      govCount++
+      if (govCount >= CONFIG.quality.sampleFrames && now - lastStepDown > CONFIG.quality.recheckMs) {
+        govCount = 0
+        if (emaFrameMs > CONFIG.quality.frameMs && dprState.value > 1) {
+          dprState.value = Math.max(1, dprState.value - CONFIG.quality.dprStep)
+          renderer.setPixelRatio(dprState.value)
+          applySize()
+          lastStepDown = now
+        }
+      }
+    }
+
+    updatePulse(now)
+    step(dt)
+  }
 
   const startLoop = () => {
     if (raf || reduced) return
     prevNow = 0
-    const tick = () => {
-      raf = requestAnimationFrame(tick)
-      if (!heroVisible || docHidden || contextLost) {
-        prevNow = 0 // no time jump on resume
-        return
-      }
-      const now = performance.now()
-      let dt = prevNow ? (now - prevNow) / 1000 : 0.016
-      prevNow = now
-      dt = Math.min(dt, 0.05)
-
-      if (!perfDone) {
-        perfTime += dt * 1000
-        perfFrames++
-        if (perfFrames >= CONFIG.quality.sampleFrames) {
-          perfDone = true
-          if (perfTime / perfFrames > CONFIG.quality.frameBudgetMs && dpr > 1) {
-            dpr = Math.max(1, dpr - CONFIG.quality.dprStep)
-            renderer.setPixelRatio(dpr)
-            applySize()
-          }
-        }
-      }
-
-      step(dt)
-    }
+    time = 0
+    lastPulseChange = 0
+    pulseSeg = -1
     raf = requestAnimationFrame(tick)
   }
 
@@ -946,11 +1223,25 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     prevNow = 0
   }
 
-  let perfFrames = 0
-  let perfTime = 0
-  let perfDone = false
+  /* ---- reduced motion ---- */
 
-  /* ---- observers / listeners ---------------------------------------- */
+  const applyMotionMode = () => {
+    if (reduced) {
+      stopLoop()
+      drag.state = "idle"
+      drag.rawYaw = 0
+      drag.rawPitch = 0
+      drag.yaw = 0
+      drag.pitch = 0
+      pivot.rotation.set(0, 0, 0)
+      fieldPts.rotation.set(0, 0, 0)
+      step(0) // one static frame, all curves pinned by `reduced`
+    } else {
+      startLoop()
+    }
+  }
+
+  /* ---- listeners / observers ---- */
 
   let resizeQueued = false
   const resizeObserver = new ResizeObserver(() => {
@@ -959,11 +1250,11 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     requestAnimationFrame(() => {
       resizeQueued = false
       applySize()
-      applyComposition()
       readRect()
     })
   })
-  resizeObserver.observe(host)
+  resizeObserver.observe(heroEl) // canvas covers the hero
+  resizeObserver.observe(host) // column moves → figure recenters
 
   const io = new IntersectionObserver(
     entries => {
@@ -972,14 +1263,12 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     },
     { threshold: 0 },
   )
-  io.observe(host)
+  io.observe(heroEl)
 
   const onVisibility = () => {
     docHidden = document.visibilityState === "hidden"
     if (!docHidden) prevNow = 0
   }
-  document.addEventListener("visibilitychange", onVisibility)
-
   const onContextLost = (e: Event) => {
     e.preventDefault()
     contextLost = true
@@ -989,42 +1278,89 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     contextLost = false
     prevNow = 0
   }
+
+  document.addEventListener("visibilitychange", onVisibility)
+  reduceMql.addEventListener("change", onReduceChange)
+
+  // live theme switch: <html data-theme> flips blending + palette uniforms
+  const themeObs = new MutationObserver(() => applyTheme())
+  themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] })
+  window.addEventListener("scroll", onScroll, { passive: true })
+  window.addEventListener("pointermove", onPointerMove, { passive: true })
+  window.addEventListener("blur", onDragUp)
+  host.addEventListener("pointerdown", onPointerDown)
+  host.addEventListener("pointermove", onDragMove)
+  heroEl.addEventListener("pointerleave", onPointerLeave) // fade parallax out when the pointer leaves the hero
+  window.addEventListener("pointerup", onDragUp)
+  window.addEventListener("pointercancel", onDragUp)
   canvas.addEventListener("webglcontextlost", onContextLost, false)
   canvas.addEventListener("webglcontextrestored", onContextRestored, false)
 
-  const onReduceChange = () => {
+  function onReduceChange() {
     reduced = reduceMql.matches
     applyMotionMode()
   }
-  reduceMql.addEventListener("change", onReduceChange)
 
-  if (!coarse) window.addEventListener("pointermove", onPointerMove, { passive: true })
-  window.addEventListener("scroll", onScroll, { passive: true })
+  /* ---- boot ---- */
 
-  /* ---- boot ---------------------------------------------------------- */
-
-  applySize()
-  applyComposition()
   readRect()
+  applySize()
+  applyTheme()
+  applyMotionMode()
 
   const destroy = () => {
     if (active && active.host === host) active = null
     stopLoop()
     resizeObserver.disconnect()
     io.disconnect()
-    window.removeEventListener("scroll", onScroll)
+    themeObs.disconnect()
     document.removeEventListener("visibilitychange", onVisibility)
     reduceMql.removeEventListener("change", onReduceChange)
-    if (!coarse) window.removeEventListener("pointermove", onPointerMove)
+    window.removeEventListener("scroll", onScroll)
+    window.removeEventListener("pointermove", onPointerMove)
+    window.removeEventListener("blur", onDragUp)
+    host.removeEventListener("pointerdown", onPointerDown)
+    host.removeEventListener("pointermove", onDragMove)
+    heroEl.removeEventListener("pointerleave", onPointerLeave)
+    window.removeEventListener("pointerup", onDragUp)
+    window.removeEventListener("pointercancel", onDragUp)
     canvas.removeEventListener("webglcontextlost", onContextLost)
     canvas.removeEventListener("webglcontextrestored", onContextRestored)
-    envTarget.dispose()
-    for (const d of disposables) d.dispose()
+    for (const g of geometries) g.dispose()
+    for (const m of materials) m.dispose()
     renderer.dispose()
     canvas.remove()
+    heroEl.style.removeProperty("isolation")
   }
 
   active = { host, destroy }
-  applyMotionMode()
   return active
+}
+
+/* ------------------------------------------------------------------ *
+ * Debug self-checks (section 3.3) — run from the console:
+ *   (window as any).__libraDebug.assertShape()
+ * ------------------------------------------------------------------ */
+
+export const libraDebug = {
+  stars: LIBRA_STARS,
+  lines: LIBRA_LINES,
+  assertShape() {
+    const s = LIBRA_STARS
+    const ys = Object.values(s).map(d => d.y)
+    const xs = Object.values(s).map(d => d.x)
+    console.assert(s.beta.y === Math.max(...ys), "β topmost")
+    console.assert(s.tau.y === Math.min(...ys), "τ bottommost")
+    console.assert(s.alpha2.x === Math.max(...xs), "α2 rightmost")
+    const gapY = Math.abs(s.gamma.y - s.alpha2.y)
+    console.assert(gapY < 0.14, "γ and α2 near-same height", gapY)
+    const ut = Math.hypot(s.upsilon.x - s.tau.x, s.upsilon.y - s.tau.y)
+    console.assert(ut > 0.1 && ut < 0.25, "υ–τ tail spacing ≈0.17", ut)
+    const sixKeys = ["beta", "alpha2", "sigma", "upsilon", "tau", "gamma"] as const
+    const sx = sixKeys.map(k => s[k].x)
+    const sy = sixKeys.map(k => s[k].y)
+    const wh = (Math.max(...sx) - Math.min(...sx)) / (Math.max(...sy) - Math.min(...sy))
+    console.assert(Math.abs(wh - 0.54) < 0.02, "W/H ≈ 0.54", wh)
+    console.assert(LIBRA_LINES.length === 6, "exactly six segments")
+  },
 }
