@@ -38,11 +38,11 @@ export default function HeroScene() {
     }
     resize()
 
-    scene.add(new THREE.AmbientLight(0x814de5, 0.6))
-    const dir = new THREE.DirectionalLight(0xffffff, 1.2)
+    scene.add(new THREE.AmbientLight(0xa47ef0, 1.1))
+    const dir = new THREE.DirectionalLight(0xffffff, 1.6)
     dir.position.set(3, 5, 4)
     scene.add(dir)
-    const rim = new THREE.PointLight(0xa47ef0, 3, 12)
+    const rim = new THREE.PointLight(0xc4a9ff, 4, 12)
     rim.position.set(-3, -2, 2)
     scene.add(rim)
 
@@ -53,10 +53,10 @@ export default function HeroScene() {
 
     const icoGeo = new THREE.IcosahedronGeometry(1.1, 1)
     const icoMat = new THREE.MeshPhongMaterial({
-      color: 0x814de5,
-      shininess: 40,
+      color: 0x9b6cf2,
+      shininess: 60,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.95,
       flatShading: true,
     })
     const ico = new THREE.Mesh(icoGeo, icoMat)
@@ -65,19 +65,19 @@ export default function HeroScene() {
 
     const wireGeo = new THREE.IcosahedronGeometry(1.15, 1)
     const wireMat = new THREE.MeshBasicMaterial({
-      color: 0xa47ef0,
+      color: 0xbda2ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.32,
     })
     group.add(new THREE.Mesh(wireGeo, wireMat))
     disposables.push(wireGeo, wireMat)
 
     const torusMat = new THREE.MeshPhongMaterial({
-      color: 0x6e30e3,
-      shininess: 60,
+      color: 0x9164f6,
+      shininess: 80,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.85,
     })
     const radial = mobile ? 8 : 16
     const tubular = mobile ? 40 : 80
@@ -106,7 +106,7 @@ export default function HeroScene() {
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta)
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
       positions[i * 3 + 2] = r * Math.cos(phi)
-      color.setHSL(0.74 + Math.random() * 0.08, 0.85, 0.55 + Math.random() * 0.25)
+      color.setHSL(0.72 + Math.random() * 0.1, 0.88, 0.66 + Math.random() * 0.3)
       colors[i * 3] = color.r
       colors[i * 3 + 1] = color.g
       colors[i * 3 + 2] = color.b
@@ -115,10 +115,10 @@ export default function HeroScene() {
     pGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3))
     pGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3))
     const pMat = new THREE.PointsMaterial({
-      size: 0.048,
+      size: 0.052,
       vertexColors: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: 1,
     })
     const particles = new THREE.Points(pGeo, pMat)
     group.add(particles)
