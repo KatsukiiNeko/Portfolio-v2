@@ -47,7 +47,7 @@ export default function ProjectCard({ project, onOpen }: ProjectCardProps) {
           {project.tags.map(tag => (
             <li
               key={tag}
-              className="rounded-control border border-border px-2 py-0.5 font-mono text-[11px] text-foreground-muted"
+              className="rounded-control border border-border px-2 py-0.5 font-mono text-xs text-foreground-muted"
             >
               {tag}
             </li>
@@ -60,7 +60,7 @@ export default function ProjectCard({ project, onOpen }: ProjectCardProps) {
               href={project.liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-10 items-center text-foreground-muted transition-colors hover:text-accent-text"
+              className="inline-flex h-11 items-center text-foreground-muted transition-colors hover:text-accent-text"
             >
               <i className="fas fa-external-link-alt mr-1.5" aria-hidden="true" />
               Live
@@ -71,7 +71,7 @@ export default function ProjectCard({ project, onOpen }: ProjectCardProps) {
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-10 items-center text-foreground-muted transition-colors hover:text-accent-text"
+              className="inline-flex h-11 items-center text-foreground-muted transition-colors hover:text-accent-text"
             >
               <i className="fab fa-github mr-1.5" aria-hidden="true" />
               Code

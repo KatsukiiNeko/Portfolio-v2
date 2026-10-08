@@ -74,7 +74,7 @@ export default function Nav() {
               <a
                 href={`#${link.id}`}
                 aria-current={active === link.id ? "true" : undefined}
-                className={`rounded-control px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                className={`flex min-h-11 items-center rounded-control px-3 text-sm font-medium transition-colors duration-200 ${
                   active === link.id
                     ? "bg-accent-muted text-foreground"
                     : "text-foreground-muted hover:text-foreground"
@@ -91,7 +91,7 @@ export default function Nav() {
             type="button"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
-            className="flex size-10 items-center justify-center rounded-control border border-border bg-surface text-foreground transition-colors duration-200 hover:border-accent"
+            className="flex size-11 items-center justify-center rounded-control border border-border bg-surface text-foreground transition-colors duration-200 hover:border-accent"
           >
             <i
               className={theme === "dark" ? "fas fa-sun" : "fas fa-moon"}
@@ -105,7 +105,7 @@ export default function Nav() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label="Toggle navigation menu"
-            className="flex size-10 items-center justify-center rounded-control border border-border bg-surface text-foreground transition-colors duration-200 hover:border-accent lg:hidden"
+            className="flex size-11 items-center justify-center rounded-control border border-border bg-surface text-foreground transition-colors duration-200 hover:border-accent lg:hidden"
           >
             <i
               className={open ? "fas fa-times" : "fas fa-bars"}
@@ -118,7 +118,7 @@ export default function Nav() {
       <div
         id="mobile-menu"
         hidden={!open}
-        className="border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
+        className="max-h-[calc(100dvh-72px)] overflow-y-auto border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
       >
         <ul className="container-page py-3">
           {links.map(link => (

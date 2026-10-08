@@ -28,6 +28,7 @@ export default function HeroScene() {
     renderer.setClearColor(0x000000, 0)
     el.appendChild(renderer.domElement)
     renderer.domElement.style.cursor = "grab"
+    renderer.domElement.style.touchAction = "pan-y"
 
     const resize = () => {
       const w = el.clientWidth || 1
@@ -220,10 +221,10 @@ export default function HeroScene() {
     return (
       <div
         aria-hidden="true"
-        className="aspect-square w-full max-w-md rounded-card border border-border bg-[radial-gradient(circle_at_30%_25%,var(--c-accent-muted),transparent_65%)]"
+        className="aspect-square min-w-0 w-full max-w-md rounded-card border border-border bg-[radial-gradient(circle_at_30%_25%,var(--c-accent-muted),transparent_65%)]"
       />
     )
   }
 
-  return <div ref={host} aria-hidden="true" className="aspect-square w-full max-w-md" />
+  return <div ref={host} aria-hidden="true" className="aspect-square min-w-0 w-full max-w-md [@media(max-height:520px)]:max-w-[34vh]" />
 }

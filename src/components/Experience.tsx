@@ -37,7 +37,7 @@ export default function Experience() {
             type="button"
             onClick={() => setFilter(category)}
             aria-pressed={filter === category}
-            className={`rounded-control border px-4 py-2.5 text-sm font-medium transition duration-200 ${
+            className={`rounded-control border px-4 py-3 text-sm font-medium transition duration-200 ${
               filter === category
                 ? "border-accent bg-accent text-white"
                 : "border-border text-foreground-muted hover:border-accent hover:text-foreground"

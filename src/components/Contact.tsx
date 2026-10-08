@@ -46,7 +46,7 @@ export default function Contact() {
           <button
             type="button"
             onClick={() => setStatus("idle")}
-            className="mt-4 inline-flex h-10 items-center text-sm font-semibold text-accent-text underline underline-offset-4"
+            className="mt-4 inline-flex h-11 items-center text-sm font-semibold text-accent-text underline underline-offset-4"
           >
             Send another message
           </button>

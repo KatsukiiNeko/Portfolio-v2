@@ -9,9 +9,9 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] scroll-mt-24 items-center pt-32 pb-20"
+      className="relative flex min-h-[100svh] scroll-mt-24 items-center pt-32 pb-20 [@media(max-height:520px)]:pt-24 [@media(max-height:520px)]:pb-10"
     >
-      <div className="container-page grid items-center gap-12 lg:grid-cols-2">
+      <div className="container-page grid items-center gap-12 lg:grid-cols-2 [@media(max-height:520px)]:gap-8">
         <div>
           <Reveal>
             <h1 className="font-display text-display font-extrabold leading-[1.05] tracking-tight text-balance">
@@ -42,7 +42,7 @@ export default function Hero() {
           </Reveal>
         </div>
 
-        <div className="flex justify-center lg:justify-end">
+        <div className="flex min-w-0 justify-center lg:justify-end">
           <Suspense fallback={null}>
             <HeroScene />
           </Suspense>

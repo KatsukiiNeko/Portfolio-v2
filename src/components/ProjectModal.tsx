@@ -90,7 +90,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
               {project.tags.map(tag => (
                 <li
                   key={tag}
-                  className="rounded-control border border-border px-2 py-0.5 font-mono text-[11px] text-foreground-muted"
+                  className="rounded-control border border-border px-2 py-0.5 font-mono text-xs text-foreground-muted"
                 >
                   {tag}
                 </li>
@@ -103,7 +103,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                   href={project.liveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+                  className="inline-flex items-center gap-2 rounded-control bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:brightness-110"
                 >
                   <i className="fas fa-external-link-alt" aria-hidden="true" /> Live
                 </a>
@@ -113,7 +113,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                   href={project.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-control border border-border px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-accent"
+                  className="inline-flex items-center gap-2 rounded-control border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:border-accent"
                 >
                   <i className="fab fa-github" aria-hidden="true" /> Code
                 </a>
@@ -121,7 +121,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="ml-auto inline-flex items-center gap-2 rounded-control border border-border px-4 py-2.5 text-sm font-semibold text-foreground-muted transition hover:border-accent hover:text-foreground"
+                className="ml-auto inline-flex items-center gap-2 rounded-control border border-border px-4 py-3 text-sm font-semibold text-foreground-muted transition hover:border-accent hover:text-foreground"
               >
                 <i className="fas fa-times" aria-hidden="true" /> Close
               </button>

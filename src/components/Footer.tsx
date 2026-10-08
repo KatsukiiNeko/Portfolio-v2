@@ -16,7 +16,7 @@ export default function Footer() {
                 aria-label={social.label}
                 rel="noopener noreferrer"
                 target="_blank"
-                className="flex size-10 items-center justify-center rounded-control border border-border bg-background text-foreground-muted transition duration-200 ease-standard hover:-translate-y-0.5 hover:border-accent hover:bg-accent hover:text-white"
+                className="flex size-11 items-center justify-center rounded-control border border-border bg-background text-foreground-muted transition duration-200 ease-standard hover:-translate-y-0.5 hover:border-accent hover:bg-accent hover:text-white"
               >
                 <i className={social.icon} aria-hidden="true" />
               </a>
