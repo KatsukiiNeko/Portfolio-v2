@@ -39,11 +39,11 @@ export default function HeroScene() {
     }
     resize()
 
-    scene.add(new THREE.AmbientLight(0xa47ef0, 1.1))
-    const dir = new THREE.DirectionalLight(0xffffff, 1.6)
+    scene.add(new THREE.AmbientLight(0xc9b0ff, 1.6))
+    const dir = new THREE.DirectionalLight(0xffffff, 2.1)
     dir.position.set(3, 5, 4)
     scene.add(dir)
-    const rim = new THREE.PointLight(0xc4a9ff, 4, 12)
+    const rim = new THREE.PointLight(0xd9c7ff, 5.5, 12)
     rim.position.set(-3, -2, 2)
     scene.add(rim)
 
@@ -54,10 +54,10 @@ export default function HeroScene() {
 
     const icoGeo = new THREE.IcosahedronGeometry(1.1, 1)
     const icoMat = new THREE.MeshPhongMaterial({
-      color: 0x9b6cf2,
-      shininess: 60,
+      color: 0xb18cff,
+      shininess: 80,
       transparent: true,
-      opacity: 0.95,
+      opacity: 1,
       flatShading: true,
     })
     const ico = new THREE.Mesh(icoGeo, icoMat)
@@ -66,19 +66,19 @@ export default function HeroScene() {
 
     const wireGeo = new THREE.IcosahedronGeometry(1.15, 1)
     const wireMat = new THREE.MeshBasicMaterial({
-      color: 0xbda2ff,
+      color: 0xd4c2ff,
       wireframe: true,
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.45,
     })
     group.add(new THREE.Mesh(wireGeo, wireMat))
     disposables.push(wireGeo, wireMat)
 
     const torusMat = new THREE.MeshPhongMaterial({
-      color: 0x9164f6,
-      shininess: 80,
+      color: 0xa884fa,
+      shininess: 100,
       transparent: true,
-      opacity: 0.85,
+      opacity: 1,
     })
     const radial = mobile ? 8 : 16
     const tubular = mobile ? 40 : 80
@@ -107,7 +107,7 @@ export default function HeroScene() {
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta)
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta)
       positions[i * 3 + 2] = r * Math.cos(phi)
-      color.setHSL(0.72 + Math.random() * 0.1, 0.88, 0.66 + Math.random() * 0.3)
+      color.setHSL(0.72 + Math.random() * 0.1, 0.9, 0.74 + Math.random() * 0.26)
       colors[i * 3] = color.r
       colors[i * 3 + 1] = color.g
       colors[i * 3 + 2] = color.b
