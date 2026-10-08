@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* Attribute-driven theme (preserves the existing data-theme + localStorage contract). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme inline {
@@ -36,7 +35,6 @@
   --c-foreground: #e9e9ee;
   --c-foreground-muted: #9a9aa8;
   --c-border: rgba(255, 255, 255, 0.09);
-  /* 3:1 against the input surface, per WCAG 1.4.11 — hairlines above stay decorative. */
   --c-border-strong: rgba(255, 255, 255, 0.33);
   --c-accent: #814de5;
   --c-accent-text: #a47ef0;

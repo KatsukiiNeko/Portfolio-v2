@@ -17,8 +17,6 @@ export default function HeroScene() {
     }
 
     if (!instance) {
-      // WebGL unavailable or init threw: fall back to the CSS card.
-      // The rest of the page never depends on the canvas.
       setFailed(true)
       return
     }
@@ -27,7 +25,6 @@ export default function HeroScene() {
   }, [])
 
   if (failed) {
-    // Static fallback: no WebGL, content never depends on the canvas.
     return (
       <div
         aria-hidden="true"

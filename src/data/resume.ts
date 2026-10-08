@@ -1,4 +1,3 @@
-/** Bracketed values are unknowns carried over from the old site — replace them, nothing here is invented. */
 
 export interface TimelineEntry {
   period: string

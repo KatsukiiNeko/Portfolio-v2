@@ -1,10 +1,3 @@
-/**
- * UI acceptance gate: builds nothing, serves `dist/` and checks it in headless Chromium.
- *
- *   npm run build && npm run check:ui
- *
- * Prerequisite (once): npx playwright install chromium
- */
 import { chromium } from "playwright"
 import { spawn } from "node:child_process"
 import { fileURLToPath } from "node:url"
@@ -27,12 +20,10 @@ const check = (name, ok, detail = "") => {
   console.log(`${ok ? "ok  " : "FAIL"}  ${name}${detail ? `  ${detail}` : ""}`)
 }
 
-// wait for the preview server
 for (let i = 0; i < 50; i++) {
   try {
     if ((await fetch(BASE)).ok) break
   } catch {
-    /* not up yet */
   }
   await sleep(200)
 }
@@ -40,7 +31,6 @@ for (let i = 0; i < 50; i++) {
 const browser = await chromium.launch()
 
 try {
-  // ---- responsive + console health ----
   for (const width of WIDTHS) {
     const page = await browser.newPage({ viewport: { width, height: 900 }, deviceScaleFactor: 2 })
     const errors = []
@@ -66,7 +56,6 @@ try {
     await page.close()
   }
 
-  // ---- assets + grid + light theme ----
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
     const bad = []
@@ -74,7 +63,7 @@ try {
     await page.goto(BASE, { waitUntil: "networkidle" })
     await page.evaluate(async () => {
       scrollTo({ top: document.body.scrollHeight, behavior: "instant" })
-      await new Promise(r => setTimeout(r, 500)) // browser-side timer
+      await new Promise(r => setTimeout(r, 500)) 
     })
 
     const imgs = await page.evaluate(() =>
@@ -105,11 +94,10 @@ try {
     await page.close()
   }
 
-  // ---- project modal: open, focus trap, escape ----
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
     await page.goto(BASE, { waitUntil: "networkidle" })
-    // selectors are structural, not title-based: content edits must not break the gate
+
     const firstCard = page.locator('button[aria-label^="Open details"]').first()
     await firstCard.click()
     await page.waitForTimeout(400)
@@ -134,7 +122,6 @@ try {
     await page.close()
   }
 
-  // ---- breakpoints: menu vs hamburger ----
   for (const [width, expectMenu] of [
     [768, false],
     [1024, true],
@@ -149,7 +136,6 @@ try {
     await page.close()
   }
 
-  // ---- mobile touch targets ----
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
     await page.goto(BASE, { waitUntil: "networkidle" })
@@ -170,7 +156,6 @@ try {
     await page.close()
   }
 
-  // ---- real phone profile: dpr 3, touch input ----
   {
     const page = await browser.newPage({
       viewport: { width: 390, height: 844 },
@@ -202,7 +187,6 @@ try {
     check("phone: no text under 12px", layout.tiny.length === 0, JSON.stringify(layout.tiny.slice(0, 5)))
     check("phone: canvas allows vertical pan", layout.touchAction === "pan-y", layout.touchAction)
 
-    // a touch swipe over the canvas must scroll like a swipe over normal content
     const cdp = await page.context().newCDPSession(page)
     const swipe = async el => {
       await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }))
@@ -229,7 +213,6 @@ try {
     await page.close()
   }
 
-  // ---- landscape phone: menu reachable, hero does not swallow the screen ----
   {
     const page = await browser.newPage({
       viewport: { width: 667, height: 375 },
@@ -263,7 +246,6 @@ try {
     await page.close()
   }
 
-  // ---- keyboard: skip link is the first tab stop ----
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
     await page.goto(BASE, { waitUntil: "networkidle" })
@@ -284,7 +266,6 @@ try {
   try {
     process.kill(-server.pid, "SIGTERM")
   } catch {
-    /* server already gone */
   }
 }
 

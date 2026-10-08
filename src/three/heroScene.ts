@@ -1,20 +1,9 @@
 import * as THREE from "three"
 
-/**
- * "The Scales" — hero scene. Real Libra constellation, deep space look.
- * Stars are emitters (no scene lights); lines and haze are lit by them in
- * figure-local space. Yaw/pitch drag with inertia and autonomous return to
- * the canonical front view. Reduced motion = one static composed frame.
- */
-
 export type HeroThree = { destroy: () => void }
 
 type Tier = "desktop" | "tablet" | "mobile"
 type Rng = () => number
-
-/* ------------------------------------------------------------------ *
- * CONSTELLATION DATA (ground truth — never distort)
- * ------------------------------------------------------------------ */
 
 type StarDef = {
   name: string
@@ -49,7 +38,6 @@ const LIBRA_LINES: [keyof typeof LIBRA_STARS, keyof typeof LIBRA_STARS][] = [
   ["alpha2", "gamma"],
 ]
 
-/* faint catalog extras (not part of the line figure), mag 5.1–5.9 */
 const FAINT_HIP = [
   { x: 0.42, y: 0.86, z: -0.4, mag: 5.5, tint: "#f4f1ea" },
   { x: 0.72, y: -0.62, z: -0.3, mag: 5.9, tint: "#efe9ea" },
@@ -59,14 +47,10 @@ const FAINT_HIP = [
   { x: -0.66, y: 0.84, z: -0.28, mag: 5.8, tint: "#f1eef4" },
 ]
 
-/* ------------------------------------------------------------------ *
- * CONFIG
- * ------------------------------------------------------------------ */
-
 const CONFIG = {
   seed: 20251008,
 
-  figScale: 1.6, // figure height 2 → 3.2 world units
+  figScale: 1.6, 
   camera: { fov: 38, near: 0.1, far: 60 },
 
   palette: {
@@ -84,19 +68,17 @@ const CONFIG = {
 
   drag: {
     sensitivity: 1.0,
-    maxYaw: 70, // deg
-    maxPitch: 35, // deg
+    maxYaw: 70,
+    maxPitch: 35,
     friction: 3.5,
-    minFling: 0.25, // rad/s
+    minFling: 0.25,
     stopSpeed: 0.02,
     returnToFront: true,
-    returnDelay: 3.5, // s
+    returnDelay: 3.5,
     returnRate: 1.8,
     deadzonePx: 4,
   },
 
-  // fieldFollow ≈ 0: real star-field depth is effectively infinite — the
-  // background must NOT rotate with the figure (only camera parallax moves it).
   parallax: { camera: 0.12, fieldFollow: 0.03, damping: 3.0, radius: 0.22 },
 
   sway: { yawDeg: 2.2, pitchDeg: 1.4, periodsSec: [47, 71] },
@@ -112,8 +94,6 @@ const CONFIG = {
   reveal: { starsSec: 1.4, linesSec: 1.0, fieldDelay: 1.6, fieldSec: 1.0 },
 
   tiers: {
-    // fill = fraction of the HERO canvas height the figure occupies;
-    // the figure is centered on the drag column (computed from layout at resize).
     desktop: { dprCap: 1.75, field: 520, spikes: true, haze: true, fill: 0.5, extraFaint: 6, sizeMul: 1 },
     tablet: { dprCap: 1.5, field: 300, spikes: true, haze: true, fill: 0.55, extraFaint: 4, sizeMul: 1 },
     mobile: { dprCap: 1.25, field: 170, spikes: false, haze: false, fill: 0.35, extraFaint: 2, sizeMul: 1.14 },
@@ -123,10 +103,6 @@ const CONFIG = {
 }
 
 const FIG_SCALE = CONFIG.figScale
-
-/* ------------------------------------------------------------------ *
- * pure helpers
- * ------------------------------------------------------------------ */
 
 function mulberry32(seed: number): Rng {
   let a = seed >>> 0
@@ -149,13 +125,11 @@ function softClamp(v: number, limit: number): number {
   return Math.sign(v) * (knee + (limit - knee) * Math.tanh((a - knee) / (limit - knee)))
 }
 
-/** B−V → Kelvin (Ballesteros). */
 function bvToTemp(bv: number): number {
   const b = Math.max(-0.33, Math.min(2, bv))
   return 4600 * (1 / (0.92 * b + 1.7) + 1 / (0.92 * b + 0.62))
 }
 
-/** Kelvin → sRGB tint, ~70% toward white (real stars read nearly white). */
 function kelvinToSrgb(k: number): THREE.Color {
   const t = k / 100
   let r: number
@@ -175,11 +149,7 @@ function kelvinToSrgb(k: number): THREE.Color {
   return c
 }
 
-/* ------------------------------------------------------------------ *
- * SHADERS
- * ------------------------------------------------------------------ */
-
-const STAR_VERT = /* glsl */ `
+const STAR_VERT =  `
 attribute float aFlux;
 attribute float aSeed;
 attribute vec3 aTint;
@@ -195,8 +165,8 @@ uniform vec2 uPointerNDC;
 uniform float uAspect;
 uniform float uPointerRadius;
 uniform float uMaxPoint;
-uniform float uMode;   // 0 = dark/additive, 1 = light/pigment
-uniform vec3 uInk;     // light-mode star core pigment
+uniform float uMode;   
+uniform vec3 uInk;
 
 varying vec3 vTint;
 varying float vI;
@@ -208,17 +178,15 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
 
-  // entrance: stars ignite in brightness order (β first)
   float st = (1.0 - clamp(aFlux, 0.0, 1.0)) * 0.5;
   float seq = clamp((uReveal - st) / 0.5, 0.0, 1.0);
 
-  // scintillation: three incommensurate sines, never visibly looping
   float s = aSeed * 6.2831;
   float tw = 0.50 * sin(uTime * (3.5 + 6.0 * aSeed) + s * 3.0)
            + 0.30 * sin(uTime * (7.0 + 7.0 * aSeed) + s * 7.0)
            + 0.20 * sin(uTime * (1.6 + 2.0 * aSeed) + s * 11.0);
   float amp = mix(0.16, 0.06, clamp(aFlux, 0.0, 1.0));
-  // rare brief flicker (~0.3 s) every 6–15 s, phase offset per star
+
   float period = 6.0 + 9.0 * hash11(aSeed * 91.7);
   float tt = uTime + aSeed * period;
   float cycle = floor(tt / period);
@@ -227,7 +195,6 @@ void main() {
   float burst = fire * exp(-pow((ph - 0.25) / 0.14, 2.0)) * 0.30;
   float tw01 = 1.0 + uTwinkle * (amp * tw + burst * (tw * 0.5 + 0.5));
 
-  // pointer proximity in screen space (aspect corrected)
   vec2 ndc = gl_Position.xy / gl_Position.w;
   float hasPointer = step(abs(uPointerNDC.x), 4.0);
   float near = smoothstep(uPointerRadius, 0.0, length((ndc - uPointerNDC) * vec2(uAspect, 1.0))) * hasPointer;
@@ -241,7 +208,7 @@ void main() {
 }
 `
 
-const STAR_FRAG = /* glsl */ `
+const STAR_FRAG =  `
 uniform vec3 uHalo;
 uniform float uExposure;
 uniform float uMode;
@@ -261,11 +228,9 @@ void main() {
   vec2 q = abs(p);
   float spikes = (exp(-q.x * 38.0) * exp(-q.y * 2.6) + exp(-q.y * 38.0) * exp(-q.x * 2.6)) * edge * vSpike;
 
-  // spikes read blue against a light page — whiten them in dark, ink them in light
   vec3 spikeTint = mix(mix(vTint, vec3(1.0), 0.75), uInk, uMode);
   vec3 coreTint = mix(vTint, uInk, uMode);
 
-  // halo forced to zero at the sprite edge — no rim, no black squares
   vec3 col = coreTint * (core * 1.7 + glow * 0.30)
            + spikeTint * spikes * 0.13
            + uHalo * glow * mix(0.45, 0.35, uMode);
@@ -273,12 +238,12 @@ void main() {
   col = 1.0 - exp(-col * uExposure);
   gl_FragColor = vec4(col, 1.0);
   #include <colorspace_fragment>
-  // premultiplied alpha derived AFTER gamma → valid for additive and over alike
+
   gl_FragColor.a = clamp(max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b)), 0.0, 1.0);
 }
 `
 
-const LINE_VERT = /* glsl */ `
+const LINE_VERT =  `
 attribute vec3 aOther;
 attribute float aSide;
 attribute float aAlong;
@@ -311,7 +276,7 @@ void main() {
 }
 `
 
-const LINE_FRAG = /* glsl */ `
+const LINE_FRAG =  `
 uniform vec3 uLine;
 uniform vec3 uHighlight;
 uniform float uLineAlpha;
@@ -328,7 +293,7 @@ varying float vSeg;
 varying float vProg;
 
 void main() {
-  // local illumination: Σ flux_i / (1 + d²/r0²) — lines glow near bright stars
+
   float L = 0.0;
   for (int i = 0; i < 8; i++) {
     float d = distance(vLocal, uStarPos[i]);
@@ -342,7 +307,6 @@ void main() {
   float a = uLineAlpha * (0.55 + 0.9 * min(L, 1.6)) * ends * across * seen;
   vec3 col = uLine * a;
 
-  // one faint signal pulse riding the selected segment
   float pulse = exp(-pow((vAlong - uPulse.y) / 0.05, 2.0))
               * step(0.5, uPulseEnabled) * (1.0 - step(0.5, abs(vSeg - uPulse.x)));
   col += uHighlight * (head * 0.5 + pulse * 0.8) * across;
@@ -354,7 +318,7 @@ void main() {
 }
 `
 
-const FIELD_VERT = /* glsl */ `
+const FIELD_VERT =  `
 attribute float aSeed;
 attribute vec3 aTint;
 attribute float aFlux;
@@ -378,7 +342,6 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
 
-  // weaker twinkle for the field (×0.5) — background should feel calm
   float tw = 0.6 * sin(uTime * (2.2 + 3.5 * aSeed) + s * 3.0) + 0.4 * sin(uTime * (5.5 + 4.0 * aSeed) + s * 7.0);
   float tw01 = 1.0 + uTwinkle * 0.08 * tw;
 
@@ -390,7 +353,7 @@ void main() {
 }
 `
 
-const FIELD_FRAG = /* glsl */ `
+const FIELD_FRAG =  `
 uniform float uExposure;
 uniform vec3 uTintMul;
 varying vec3 vTint;
@@ -412,7 +375,7 @@ void main() {
 }
 `
 
-const HAZE_VERT = /* glsl */ `
+const HAZE_VERT =  `
 varying vec2 vUv;
 void main() {
   vUv = uv;
@@ -420,7 +383,7 @@ void main() {
 }
 `
 
-const HAZE_FRAG = /* glsl */ `
+const HAZE_FRAG =  `
 uniform vec3 uColor;
 uniform float uAlpha;
 varying vec2 vUv;
@@ -466,7 +429,7 @@ function buildStars(six: readonly string[], faintCount: number, spikesOn: boolea
     tints[i * 3] = c.r
     tints[i * 3 + 1] = c.g
     tints[i * 3 + 2] = c.b
-    spikes[i] = spikesOn && d.mag < 3.0 ? Math.min(1, flux[i]) : 0 // β + α2 only
+    spikes[i] = spikesOn && d.mag < 3.0 ? Math.min(1, flux[i]) : 0
     localFlux.push(flux[i])
   })
 
@@ -527,7 +490,6 @@ function buildLines(cfg: typeof CONFIG.lines): LineBuild {
     const delay = s * cfg.traceStagger
     const dur = cfg.traceDur
 
-    // 4 corners of the ribbon: [start,-1], [start,+1], [end,-1], [end,+1]
     for (let v = 0; v < 4; v++) {
       const i = s * 4 + v
       const isEnd = v >= 2
@@ -549,7 +511,6 @@ function buildLines(cfg: typeof CONFIG.lines): LineBuild {
 
 type FieldBuild = { positions: Float32Array; seeds: Float32Array; tints: Float32Array; flux: Float32Array }
 
-/** Three depth shells behind the figure, seeded so composition never varies. */
 function buildField(count: number, camZ: number, aspect: number): FieldBuild {
   const rng = mulberry32(CONFIG.seed + 1)
   const positions = new Float32Array(count * 3)
@@ -564,16 +525,15 @@ function buildField(count: number, camZ: number, aspect: number): FieldBuild {
 
   const fovHalf = THREE.MathUtils.degToRad(CONFIG.camera.fov / 2)
   for (let i = 0; i < count; i++) {
-    // three depth shells, all strictly behind the figure, inside the frustum
     const shell = i % 3
-    const dist = camZ + 5 + shell * 6 + rng() * 6 // ≥5 units behind the figure plane
+    const dist = camZ + 5 + shell * 6 + rng() * 6
     const halfH = dist * Math.tan(fovHalf) * 1.3
-    const halfW = halfH * Math.max(aspect, 1) * 1.15 // covers the full hero width
+    const halfW = halfH * Math.max(aspect, 1) * 1.15
     positions[i * 3] = (rng() * 2 - 1) * halfW
     positions[i * 3 + 1] = (rng() * 2 - 1) * halfH
-    positions[i * 3 + 2] = camZ - dist // camera looks down −z from z = camZ
+    positions[i * 3 + 2] = camZ - dist
     seeds[i] = rng()
-    flux[i] = Math.pow(rng(), 2.2) // mostly faint, few brighter
+    flux[i] = Math.pow(rng(), 2.2)
     const pick = rng()
     c.copy(pick < 0.7 ? base : pick < 0.9 ? warm : cool)
     c.lerp(grey, 0.5)
@@ -583,10 +543,6 @@ function buildField(count: number, camZ: number, aspect: number): FieldBuild {
   }
   return { positions, seeds, tints, flux }
 }
-
-/* ------------------------------------------------------------------ *
- * RUNTIME
- * ------------------------------------------------------------------ */
 
 let active: { host: HTMLElement; destroy: () => void } | null = null
 
@@ -600,7 +556,6 @@ function pickTier(): Tier {
 type DragState = "idle" | "dragging" | "inertia"
 
 export function initHeroThree(host: HTMLElement): HeroThree | null {
-  // idempotent: a second call never creates a second canvas or loop
   if (active) {
     if (active.host === host) return active
     active.destroy()
@@ -615,8 +570,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const fovHalfRad = THREE.MathUtils.degToRad(CONFIG.camera.fov / 2)
   let baseCamZ = FIG_SCALE / Math.tan(fovHalfRad) / tier.fill
 
-  /* ---- renderer ---- */
-
   let renderer: THREE.WebGLRenderer
   try {
     renderer = new THREE.WebGLRenderer({
@@ -628,21 +581,20 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       depth: true,
     })
   } catch {
-    return null // WebGL unavailable → CSS fallback, page unaffected
+    return null
   }
   const canvas = renderer.domElement
   canvas.className = "hero-canvas"
-  canvas.style.pointerEvents = "none" // drag lives on the column host only
+  canvas.style.pointerEvents = "none"
   canvas.style.position = "absolute"
   canvas.style.inset = "0"
-  canvas.style.zIndex = "-1" // behind hero text; -1 only works if #hero isolates
+  canvas.style.zIndex = "-1"
   canvas.style.touchAction = "pan-y"
   canvas.style.display = "block"
-  host.style.touchAction = "pan-y" // vertical touch gestures must scroll the page
-  heroEl.style.isolation = "isolate" // own stacking context → canvas stays above body bg, below content
+  host.style.touchAction = "pan-y"
+  heroEl.style.isolation = "isolate"
   heroEl.appendChild(canvas)
 
-  // pixel ratio · palette (linear under ColorManagement)
   const dprState = { value: Math.min(window.devicePixelRatio || 1, tier.dprCap) }
   renderer.setPixelRatio(dprState.value)
   renderer.setClearColor(0x000000, 0)
@@ -652,8 +604,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const lineColor = new THREE.Color(CONFIG.palette.violetLight)
   const violetDeep = new THREE.Color(CONFIG.palette.violetDeep)
   const highlight = new THREE.Color(CONFIG.palette.highlight)
-
-  /* ---- scene graph ---- */
 
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(CONFIG.camera.fov, 1, CONFIG.camera.near, CONFIG.camera.far)
@@ -666,8 +616,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   pivot.add(gFig, gCreative)
   root.add(pivot)
   scene.add(root)
-
-  /* ---- stars ---- */
 
   const six = tier.spikes ? [...SIX, "theta" as const, "iota" as const] : [...SIX]
   const stars = buildStars(six, tier.extraFaint, tier.spikes)
@@ -684,7 +632,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     const range = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE) as Float32Array | null
     if (range && range.length >= 2) maxPoint = Math.min(128, Math.max(16, range[1]))
   } catch {
-    /* default cap */
   }
 
   const starMat = new THREE.ShaderMaterial({
@@ -711,14 +658,12 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       uHalo: { value: halo },
       uExposure: { value: CONFIG.lighting.exposure },
       uMode: { value: 0 },
-      uInk: { value: new THREE.Color("#33245c") }, // light-mode star pigment
+      uInk: { value: new THREE.Color("#33245c") },
     },
   })
   const starPts = new THREE.Points(starGeo, starMat)
   starPts.frustumCulled = false
   gFig.add(starPts)
-
-  /* ---- lines (ribbon quads) ---- */
 
   const lb = buildLines(CONFIG.lines)
   const lineGeo = new THREE.BufferGeometry()
@@ -736,7 +681,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   }
   lineGeo.setIndex(idx)
 
-  // star illumination data, figure-local space (static — never updated per frame)
   const uStarPos: THREE.Vector3[] = []
   const uStarFlux: number[] = []
   six.forEach(key => {
@@ -778,8 +722,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   lines.frustumCulled = false
   gFig.add(lines)
 
-  /* ---- haze (only on tiers that opt in) ---- */
-
   let hazeMat: THREE.ShaderMaterial | null = null
   if (tier.haze) {
     const hazeGeo = new THREE.PlaneGeometry(5.5, 5.5)
@@ -802,10 +744,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     haze.position.set(0.1, 0.55, -1.5)
     haze.renderOrder = -1
     haze.frustumCulled = false
-    root.add(haze) // NOT inside the pivot — atmosphere must not rotate with the drag
+    root.add(haze)
   }
-
-  /* ---- background field (counter-parallax, lives outside the pivot) ---- */
 
   const fb = buildField(
     tier.field,
@@ -842,8 +782,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   fieldPts.frustumCulled = false
   scene.add(fieldPts)
 
-  /* ---- state ---- */
-
   const coarse = window.matchMedia("(pointer: coarse)").matches
   const reduceMql = window.matchMedia("(prefers-reduced-motion: reduce)")
   let reduced = reduceMql.matches
@@ -871,18 +809,15 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const geometries = [starGeo, lineGeo, fieldGeo]
   if (hazeMat) materials.push(hazeMat)
 
-  /* ---- theme (dark = additive glow, light = pigment/over) ---- */
-
-  const accentInk = new THREE.Color("#6a3bd4") // light-theme accent
+  const accentInk = new THREE.Color("#6a3bd4")
   const isLight = () => document.documentElement.getAttribute("data-theme") === "light"
 
   const applyTheme = () => {
     const light = isLight()
     starMat.uniforms.uMode.value = light ? 1 : 0
-    fieldMat.uniforms.uTintMul.value.setScalar(light ? 0.6 : 1) // dust must read on white
+    fieldMat.uniforms.uTintMul.value.setScalar(light ? 0.6 : 1)
     lineMat.uniforms.uLine.value = light ? accentInk : lineColor
     lineMat.uniforms.uHighlight.value = light ? accentInk : highlight
-    // fragments emit premultiplied alpha → dark adds (One/One), light composites over
     const dst = light ? THREE.OneMinusSrcAlphaFactor : THREE.OneFactor
     for (const m of materials) {
       m.blendDst = dst
@@ -891,13 +826,10 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     if (reduced) step(0)
   }
 
-  /* ---- sizing / composition ---- */
-
   const applyComposition = () => {
     const aspect = surfaceW / surfaceH
     const visH = 2 * baseCamZ * Math.tan(fovHalfRad)
     const visW = visH * aspect
-    // center the figure on the drag column (host), measured at resize only
     const hr = heroEl.getBoundingClientRect()
     const nr = host.getBoundingClientRect()
     const ndcX = (((nr.left + nr.width / 2) - (hr.left + hr.width / 2)) / Math.max(1, hr.width)) * 2
@@ -906,7 +838,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   }
 
   const applySize = () => {
-    surfaceW = Math.max(1, heroEl.clientWidth) // canvas covers the whole hero
+    surfaceW = Math.max(1, heroEl.clientWidth)
     surfaceH = Math.max(1, heroEl.clientHeight)
     const aspect = surfaceW / surfaceH
 
@@ -929,8 +861,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
 
     if (reduced) step(0)
   }
-
-  /* ---- drag interactions ---- */
 
   const drag = {
     state: "idle" as DragState,
@@ -985,7 +915,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       try {
         host.setPointerCapture(e.pointerId)
       } catch {
-        /* capture may fail if pointer left — ignore */
       }
       drag.lx = e.clientX
       drag.ly = e.clientY
@@ -1028,8 +957,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     pointerTarget.y = -(((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1)
   }
 
-  /* ---- scroll (rAF throttled) ---- */
-
   let scrollQueued = false
   const readRect = () => {
     const r = heroEl.getBoundingClientRect()
@@ -1053,8 +980,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     })
   }
 
-  /* ---- per-frame step (order fixed, zero allocation) ---- */
-
   const sway = CONFIG.sway
   const swayYawW = THREE.MathUtils.degToRad(sway.yawDeg)
   const swayPitchW = THREE.MathUtils.degToRad(sway.pitchDeg)
@@ -1063,7 +988,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const step = (dt: number) => {
     time += dt
 
-    // --- 1. drag physics ---
     const c = CONFIG.drag
     const maxY = THREE.MathUtils.degToRad(c.maxYaw)
     const maxP = THREE.MathUtils.degToRad(c.maxPitch)
@@ -1090,7 +1014,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     drag.yaw = softClamp(drag.rawYaw, maxY)
     drag.pitch = softClamp(drag.rawPitch, maxP)
 
-    // --- 2. sway (felt, not noticed) ---
     let swayYaw = 0
     let swayPitch = 0
     if (!reduced && dt > 0) {
@@ -1104,7 +1027,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       0,
     )
 
-    // --- 3. pointer parallax (desktop only, damped) ---
     const hasPointer = pointerTarget.x < 8 && !coarse && !reduced && dt > 0
     if (hasPointer) {
       if (pointerCur.x > 8) pointerCur.x = pointerTarget.x
@@ -1113,7 +1035,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       pointerCur.y += (pointerTarget.y - pointerCur.y) * e
     }
 
-    // --- 4. uniforms only ---
     starMat.uniforms.uTime.value = time
     starMat.uniforms.uReveal.value = revealCurve(time)
     starMat.uniforms.uTwinkle.value = reduced || heroProgress > 0.4 ? 0 : 1
@@ -1133,13 +1054,11 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
         CONFIG.lighting.hazeAlpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.haze.periodSec)) * (1 - heroProgress)
     }
 
-    // --- 5. camera orbit-look — position lerped, not directly dragged ---
     camera.position.x = hasPointer ? pointerCur.x * CONFIG.parallax.camera : 0
     camera.position.y = hasPointer ? -pointerCur.y * CONFIG.parallax.camera : 0
     camera.position.z = baseCamZ + heroProgress * 1.4
     camera.lookAt(0, 0, 0)
 
-    // --- 6. render + governor feed ---
     renderer.render(scene, camera)
   }
 
@@ -1150,7 +1069,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const pulseHead = (t: number) => {
     if (pulseSeg < 0 || reduced) return -1
     const ph = ((t - 1) % CONFIG.pulse.periodSec) / CONFIG.pulse.periodSec
-    return ph >= 0 && ph <= 0.35 ? ph / 0.35 : -1 // runs for the first 35% of the period
+    return ph >= 0 && ph <= 0.35 ? ph / 0.35 : -1
   }
 
   const pickPulseSegment = () => {
@@ -1158,7 +1077,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       pulseSeg = -1
       return
     }
-    pulseSeg = (pulseSeg + 2) % LIBRA_LINES.length // deterministic walk over the segments
+    pulseSeg = (pulseSeg + 2) % LIBRA_LINES.length
   }
 
   let lastPulseChange = 0
@@ -1167,11 +1086,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       lastPulseChange = time
       pickPulseSegment()
     }
-    // `pulseHead` reads time directly, so nothing else is needed
     void now
   }
-
-  /* ---- loop + governor ---- */
 
   const tick = () => {
     raf = requestAnimationFrame(tick)
@@ -1183,7 +1099,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     const dt = prevNow ? Math.min((now - prevNow) / 1000, 0.05) : 0.016
     prevNow = now
 
-    // quality governor: warm-up → average → step down, never up, every 2 s
     if (govState === "warmup") {
       govCount++
       if (govCount >= CONFIG.quality.warmupFrames) {
@@ -1224,8 +1139,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     prevNow = 0
   }
 
-  /* ---- reduced motion ---- */
-
   const applyMotionMode = () => {
     if (reduced) {
       stopLoop()
@@ -1236,13 +1149,11 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       drag.pitch = 0
       pivot.rotation.set(0, 0, 0)
       fieldPts.rotation.set(0, 0, 0)
-      step(0) // one static frame, all curves pinned by `reduced`
+      step(0)
     } else {
       startLoop()
     }
   }
-
-  /* ---- listeners / observers ---- */
 
   let resizeQueued = false
   const resizeObserver = new ResizeObserver(() => {
@@ -1254,8 +1165,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       readRect()
     })
   })
-  resizeObserver.observe(heroEl) // canvas covers the hero
-  resizeObserver.observe(host) // column moves → figure recenters
+  resizeObserver.observe(heroEl)
+  resizeObserver.observe(host)
 
   const io = new IntersectionObserver(
     entries => {
@@ -1283,7 +1194,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   document.addEventListener("visibilitychange", onVisibility)
   reduceMql.addEventListener("change", onReduceChange)
 
-  // live theme switch: <html data-theme> flips blending + palette uniforms
   const themeObs = new MutationObserver(() => applyTheme())
   themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] })
   window.addEventListener("scroll", onScroll, { passive: true })
@@ -1291,7 +1201,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   window.addEventListener("blur", onDragUp)
   host.addEventListener("pointerdown", onPointerDown)
   host.addEventListener("pointermove", onDragMove)
-  heroEl.addEventListener("pointerleave", onPointerLeave) // fade parallax out when the pointer leaves the hero
+  heroEl.addEventListener("pointerleave", onPointerLeave)
   window.addEventListener("pointerup", onDragUp)
   window.addEventListener("pointercancel", onDragUp)
   canvas.addEventListener("webglcontextlost", onContextLost, false)
@@ -1301,8 +1211,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     reduced = reduceMql.matches
     applyMotionMode()
   }
-
-  /* ---- boot ---- */
 
   readRect()
   applySize()
@@ -1337,11 +1245,6 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   active = { host, destroy }
   return active
 }
-
-/* ------------------------------------------------------------------ *
- * Debug self-checks (section 3.3) — run from the console:
- *   (window as any).__libraDebug.assertShape()
- * ------------------------------------------------------------------ */
 
 export const libraDebug = {
   stars: LIBRA_STARS,
