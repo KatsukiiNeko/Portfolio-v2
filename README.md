@@ -1,278 +1,119 @@
-# ✨ Portfolio v2
+# Portfolio v2
 
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5\&logoColor=white\&style=for-the-badge)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3\&logoColor=white\&style=for-the-badge)
-![JavaScript](https://img.shields.io/badge/JavaScript-ES2025-F7DF1E?logo=javascript\&logoColor=black\&style=for-the-badge)
-![Three.js](https://img.shields.io/badge/Three.js-r180-000000?logo=three.js\&style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Active-success?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
+Personal portfolio for **Nguyen Phuong Minh Tan** (Katsukii Neko) — graphic design, Python and web development.
 
----
+Rebuilt as a React + TypeScript single-page site. The previous vanilla HTML/CSS/JS implementation was
+removed in this version; it remains available in git history.
 
-## 🚀 Overview
+## Stack
 
-A modern interactive portfolio built with **vanilla HTML, CSS, and JavaScript**, enhanced by **Three.js** for real-time 3D experiences and immersive visual storytelling.
+| Layer     | Choice                                     |
+| --------- | ------------------------------------------ |
+| UI        | React 19 + TypeScript                      |
+| Build     | Vite 7                                     |
+| Styling   | Tailwind CSS 4 (tokens in `src/index.css`) |
+| Motion    | Motion for React                           |
+| 3D        | Three.js (lazy-loaded hero scene)          |
+| Email     | `@emailjs/browser`                         |
 
-The project focuses on delivering a premium frontend experience through scalable architecture, modern design systems, smooth interactions, and high-performance rendering without relying on heavy frameworks.
+No router, no state library, no component kit. One page, eight sections.
 
-Designed as both a personal portfolio and a frontend experimentation platform for advanced UI/UX concepts.
-
----
-
-## ✨ Core Features
-
-### User Experience
-
-* 🎨 Dynamic light and dark themes
-* ⚡ Smooth page transitions and micro-interactions
-* 🖱️ Interactive UI components
-* 📱 Fully responsive across desktop, tablet, and mobile
-* ♿ Accessibility-focused navigation and layouts
-
-### Visual Experience
-
-* 🌌 Three.js-powered 3D environment
-* ✨ GPU-accelerated animations
-* 🎭 Motion-driven storytelling
-* 🎯 Context-aware visual effects
-* 🖼️ High-quality visual hierarchy and typography system
-
-### Developer Experience
-
-* 🧩 Modular CSS architecture
-* 📦 Component-based frontend organization
-* 🔄 JSON-driven content management
-* 🛠️ Maintainable project structure
-* 🚀 Framework-free deployment simplicity
-
----
-
-## 🏗️ Frontend Architecture
-
-### Design System
-
-| Layer      | Responsibility                       |
-| ---------- | ------------------------------------ |
-| Base       | Global resets, typography, variables |
-| Themes     | Light/Dark design tokens             |
-| Components | Reusable UI building blocks          |
-| Sections   | Page-specific layouts                |
-| Animations | Motion system and interactions       |
-| Utilities  | Shared helper classes                |
-
-### Rendering Pipeline
-
-| Layer             | Purpose                        |
-| ----------------- | ------------------------------ |
-| DOM Layer         | Content and structure          |
-| CSS Layer         | Styling and layout             |
-| Interaction Layer | User events and animations     |
-| Three.js Layer    | Real-time 3D rendering         |
-| Data Layer        | JSON-driven content management |
-
-### Architectural Principles
-
-* Separation of concerns
-* Reusable component patterns
-* Scalable CSS organization
-* Progressive enhancement
-* Performance-first rendering
-* Framework-independent architecture
-
----
-
-## 🎨 UI & UX System
-
-### Typography
-
-* Fluid typography scaling
-* Responsive heading hierarchy
-* Optimized line height and spacing
-* Improved mobile readability
-
-### Motion Design
-
-* Hardware-accelerated animations
-* Smooth scrolling experiences
-* Micro-interactions for feedback
-* Contextual transition system
-
-### Responsive Strategy
-
-| Device    | Support |
-| --------- | ------- |
-| Mobile    | ✅       |
-| Tablet    | ✅       |
-| Desktop   | ✅       |
-| Ultrawide | ✅       |
-
----
-
-## ⚡ Performance Focus
-
-### Optimization Techniques
-
-* Lazy-loaded assets
-* Optimized rendering paths
-* Efficient animation loops
-* Minimal runtime overhead
-* Reduced layout shifts
-* GPU-accelerated visual effects
-
-### Performance Goals
-
-* Fast First Contentful Paint
-* Smooth 60 FPS interactions
-* Responsive UI feedback
-* Lightweight bundle footprint
-
----
-
-## 🧠 Three.js Integration
-
-The portfolio includes a dedicated rendering pipeline for interactive 3D experiences.
-
-### Features
-
-* Real-time scene rendering
-* Dynamic camera movement
-* Interactive scene elements
-* Optimized animation loop
-* Responsive viewport handling
-
-### Rendering Flow
-
-```text
-User Interaction
-       ↓
-Input Manager
-       ↓
-Scene Controller
-       ↓
-Three.js Renderer
-       ↓
-GPU
-       ↓
-Visual Output
-```
-
----
-
-## ⚙️ Tech Stack
-
-| Category        | Technology         |
-| --------------- | ------------------ |
-| Structure       | HTML5              |
-| Styling         | CSS3               |
-| Logic           | Vanilla JavaScript |
-| 3D Graphics     | Three.js           |
-| Deployment      | Vercel             |
-| Data            | JSON               |
-| Version Control | Git                |
-
----
-
-## 📁 Project Structure
+## Getting started
 
 ```bash
-Portfolio-v2/
-│
-├── index.html
-├── README.md
-├── LICENSE
-├── .gitignore
-│
-├── assets/
-│   ├── icons/
-│   └── images/
-│
-├── css/
-│   ├── base.css
-│   ├── themes.css
-│   ├── components.css
-│   ├── navbar.css
-│   ├── hero.css
-│   ├── sections.css
-│   └── animations.css
-│
-├── js/
-│   ├── main.js
-│   ├── theme.js
-│   ├── nav.js
-│   ├── animations.js
-│   ├── about.js
-│   ├── skills.js
-│   ├── projects.js
-│   ├── contact.js
-│   └── three-scene.js
-│
-└── data/
-    └── projects.json
+npm install
+npx playwright install chromium   # once, for the UI check
+npm run dev                       # http://localhost:5173
 ```
 
----
+| Command            | What it does                                        |
+| ------------------ | --------------------------------------------------- |
+| `npm run dev`      | Dev server with HMR                                 |
+| `npm run build`    | `tsc --noEmit` then production build into `dist/`   |
+| `npm run preview`  | Serves the production build                         |
+| `npm run check:ui` | Headless browser acceptance checks (run `build` first) |
 
-## 🚀 Getting Started
-
-### Clone Repository
+## Project structure
 
 ```bash
-git clone https://github.com/KatsukiiNeko/Portfolio-v2.git
-cd Portfolio-v2
+src/
+├── App.tsx                 # section order + skip link
+├── index.css               # design tokens, light/dark swap, base styles
+├── main.tsx
+├── components/
+│   ├── Nav.tsx             # fixed nav, theme toggle, mobile menu, active section
+│   ├── Section.tsx         # shared section shell (id, heading, intro)
+│   ├── Hero.tsx            # name, roles, CTAs, lazy 3D scene
+│   ├── About.tsx           # intro + metadata list
+│   ├── Education.tsx       # timeline
+│   ├── Expertise.tsx       # grouped fields, no percentage bars
+│   ├── Experience.tsx      # project filters + grid + modal
+│   ├── ProjectCard.tsx
+│   ├── ProjectModal.tsx    # focus trap, Escape, scroll lock
+│   ├── EntryList.tsx       # achievements / interests
+│   ├── Contact.tsx         # EmailJS form with native validation
+│   ├── Button.tsx
+│   ├── Reveal.tsx          # whileInView entrance, honours reduced motion
+│   └── Footer.tsx
+├── data/
+│   ├── profile.ts          # name, roles, location, intro, socials
+│   ├── projects.ts         # the five real projects
+│   └── resume.ts           # education, expertise, achievements, interests
+└── three/
+    └── HeroScene.tsx       # ported scene: dispose, DPR cap, off-screen pause
+scripts/
+└── ui-check.mjs            # the `npm run check:ui` checks
+public/
+└── assets/                 # icons + project images
 ```
 
-### Local Development
+## Editing content
 
-```bash
-python -m http.server 8000
-```
+All copy lives in `src/data/`. Nothing is fetched at runtime.
 
-Open:
+Bracketed values such as `[Date of birth: add]` are **placeholders** — the fact was never present in the
+original site, so it was not invented. Replace or delete each one:
 
-```text
-http://localhost:8000
-```
+- `profile.dateOfBirth`
+- `education[0].place` and `.period` (school name and dates)
+- `achievements` (currently one placeholder entry)
 
-### Deployment
+Known facts (name, location, roles, intro, projects, socials) were carried over verbatim from the old site.
 
-Deploy directly to:
+## Design tokens
 
-* Vercel
-* Netlify
-* GitHub Pages
-* Cloudflare Pages
+`src/index.css` holds every color, font, radius and easing value. The theme is attribute-driven and
+preserves the original contract: `<html data-theme="dark|light">` plus the `kn-theme` localStorage key.
+Because every color resolves through a token, no `dark:` variants are needed.
 
-No build process required.
+- Display: Syne · Body: Instrument Sans · Metadata: system mono
+- Single accent: `#814de5` (dark) / `#6a3bd4` (light), with a lighter `accent-text` variant so accent
+  text clears WCAG AA on dark backgrounds
+- Hairlines are decorative; form controls use `border-strong`, which clears WCAG 1.4.11 (3:1)
 
-## 🤝 Contributing
+## Three.js
 
-Contributions, issues, and feature suggestions are welcome.
+The hero scene is imported dynamically, so Three ships in its own chunk and never blocks first paint.
+It caps device pixel ratio at 2, pauses when scrolled off screen, disposes geometry/materials/renderers
+on unmount, reduces geometry on mobile, and degrades to a static gradient when WebGL is unavailable.
+Animation respects `prefers-reduced-motion` (via `MotionConfig` and the scene's own media query).
 
-```bash
-git checkout -b feature/amazing-feature
-git commit -m "Add amazing feature"
-git push origin feature/amazing-feature
-```
+## Checks
 
-Open a Pull Request.
+`npm run check:ui` starts `vite preview`, drives headless Chromium and asserts:
 
----
+- no horizontal overflow and a clean console at 375 / 390 / 768 / 1024 / 1280 / 1440
+- no broken images or 4xx/5xx responses
+- project modal opens, traps focus, closes on Escape
+- category filtering, theme persistence, nav collapse breakpoints
+- mobile touch targets >= 40px, skip link is the first tab stop
 
-## 📜 License
+## Deployment
+
+Static build — deploy `dist/` to Vercel, Netlify, GitHub Pages or Cloudflare Pages.
+
+## License
 
 MIT License. See `LICENSE` for details.
 
----
-
-## 📄 Copyright
-
 © 2026 Katsukii Neko. All rights reserved.
-
----
-
-<div align="center">
-
-### ✨ Design First • ⚡ Performance First • 🎨 Experience First
-
-> *Design. Code. Experience.*
-</div>

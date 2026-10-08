@@ -1,0 +1,191 @@
+/**
+ * UI acceptance gate: builds nothing, serves `dist/` and checks it in headless Chromium.
+ *
+ *   npm run build && npm run check:ui
+ *
+ * Prerequisite (once): npx playwright install chromium
+ */
+import { chromium } from "playwright"
+import { spawn } from "node:child_process"
+import { setTimeout as sleep } from "node:timers/promises"
+
+const PORT = 4173
+const BASE = `http://localhost:${PORT}/`
+const WIDTHS = [375, 390, 768, 1024, 1280, 1440]
+
+const server = spawn("npm", ["run", "preview"], {
+  stdio: "ignore",
+  detached: true,
+  cwd: new URL("..", import.meta.url).pathname,
+})
+
+const checks = []
+const check = (name, ok, detail = "") => {
+  checks.push({ name, ok, detail })
+  console.log(`${ok ? "ok  " : "FAIL"}  ${name}${detail ? `  ${detail}` : ""}`)
+}
+
+// wait for the preview server
+for (let i = 0; i < 50; i++) {
+  try {
+    if ((await fetch(BASE)).ok) break
+  } catch {
+    /* not up yet */
+  }
+  await sleep(200)
+}
+
+const browser = await chromium.launch()
+
+try {
+  // ---- responsive + console health ----
+  for (const width of WIDTHS) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    const errors = []
+    page.on("console", m => m.type() === "error" && errors.push(m.text()))
+    page.on("pageerror", e => errors.push(String(e)))
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    await page.waitForTimeout(400)
+
+    const m = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      h2: document.querySelectorAll("h2").length,
+      header: Math.round(document.querySelector("header").getBoundingClientRect().height),
+    }))
+
+    check(
+      `@${width} no horizontal overflow`,
+      m.overflow <= 1,
+      `overflow=${m.overflow}`,
+    )
+    check(`@${width} 7 section headings`, m.h2 === 7, `h2=${m.h2}`)
+    check(`@${width} nav stays one line`, m.header <= 80, `h=${m.header}px`)
+    check(`@${width} console clean`, errors.length === 0, errors.join(" | "))
+    await page.close()
+  }
+
+  // ---- assets + grid + light theme ----
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+    const bad = []
+    page.on("response", r => r.status() >= 400 && bad.push(`${r.status()} ${r.url()}`))
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    await page.evaluate(async () => {
+      scrollTo({ top: document.body.scrollHeight, behavior: "instant" })
+      await new Promise(r => setTimeout(r, 500)) // browser-side timer
+    })
+
+    const imgs = await page.evaluate(() =>
+      [...document.images].map(i => ({ ok: i.complete && i.naturalWidth > 0, src: i.currentSrc })),
+    )
+    check("all images decode", imgs.every(i => i.ok), JSON.stringify(imgs.filter(i => !i.ok)))
+    check("no 4xx/5xx responses", bad.length === 0, bad.join(", "))
+
+    const cols = await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector("#experience .grid")).gridTemplateColumns.split(" ")
+          .length,
+    )
+    check("project grid is 3-up at 1440", cols === 3, `cols=${cols}`)
+
+    await page.click('button[aria-label="Switch to light theme"]')
+    await page.waitForTimeout(300)
+    const theme = await page.evaluate(() => ({
+      attr: document.documentElement.dataset.theme,
+      stored: localStorage.getItem("kn-theme"),
+      bg: getComputedStyle(document.body).backgroundColor,
+    }))
+    check(
+      "theme toggle persists",
+      theme.attr === "light" && theme.stored === "light" && theme.bg === "rgb(245, 244, 248)",
+      JSON.stringify(theme),
+    )
+    await page.close()
+  }
+
+  // ---- project modal: open, focus trap, escape ----
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    await page.click('button[aria-label="Open details for Kaoruko Waguri"]')
+    await page.waitForTimeout(400)
+    const opened = await page.isVisible('[role="dialog"]')
+    const focused = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))
+    await page.keyboard.press("Escape")
+    await page.waitForTimeout(400)
+    const closed = !(await page.isVisible('[role="dialog"]'))
+    check("modal opens", opened)
+    check("modal traps focus", focused)
+    check("modal closes on Escape", closed)
+
+    await page.click('button:has-text("Design")')
+    await page.waitForTimeout(500)
+    const filtered = await page.locator("article").count()
+    check("category filter works", filtered === 3, `cards=${filtered}`)
+    await page.close()
+  }
+
+  // ---- breakpoints: menu vs hamburger ----
+  for (const [width, expectMenu] of [
+    [768, false],
+    [1024, true],
+  ]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    const menu = await page.locator("header ul").first().isVisible()
+    const burger = await page
+      .locator('button[aria-label="Toggle navigation menu"]')
+      .isVisible()
+    check(`@${width} nav collapses correctly`, menu === expectMenu && burger !== expectMenu)
+    await page.close()
+  }
+
+  // ---- mobile touch targets ----
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } })
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    const small = await page.evaluate(() =>
+      [...document.querySelectorAll("button, a[href]")]
+        .filter(e => e.offsetParent !== null && !e.classList.contains("sr-only"))
+        .map(e => {
+          const r = e.getBoundingClientRect()
+          return {
+            t: (e.textContent || e.ariaLabel || "").trim().slice(0, 20),
+            w: Math.round(r.width),
+            h: Math.round(r.height),
+          }
+        })
+        .filter(x => x.w < 40 || x.h < 40),
+    )
+    check("mobile targets >= 40px", small.length === 0, JSON.stringify(small))
+    await page.close()
+  }
+
+  // ---- keyboard: skip link is the first tab stop ----
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    await page.keyboard.press("Tab")
+    const first = await page.evaluate(() => ({
+      text: document.activeElement?.textContent?.trim(),
+      visible: document.activeElement?.getBoundingClientRect().top >= 0,
+    }))
+    check(
+      "skip link is the first tab stop",
+      first.text === "Skip to content" && first.visible,
+      JSON.stringify(first),
+    )
+    await page.close()
+  }
+} finally {
+  await browser.close()
+  try {
+    process.kill(-server.pid, "SIGTERM")
+  } catch {
+    /* server already gone */
+  }
+}
+
+const failed = checks.filter(c => !c.ok)
+console.log(`\n${checks.length - failed.length}/${checks.length} checks passed`)
+process.exit(failed.length ? 1 : 0)
