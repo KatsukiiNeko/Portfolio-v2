@@ -106,6 +106,10 @@ const CONFIG = {
 
   sway: { yawDeg: 2.2, pitchDeg: 1.4, periodsSec: [47, 71] },
 
+  drift: { yawDeg: 14, pitchDeg: 5, periodsSec: [40, 53] },
+
+  aura: { alpha: 0.05, periodSec: 26 },
+
   lighting: { exposure: 1.15, haloR0: 0.9, hazeAlpha: 0.006 },
 
   lines: { widthPx: 1.4, featherPx: 0.8, gap: 0.05, alpha: 0.55, traceDur: 1.0, traceStagger: 0.16 },
@@ -859,6 +863,28 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     root.add(haze)
   }
 
+  const auraGeo = new THREE.PlaneGeometry(5.0, 4.6)
+  const auraMat = new THREE.ShaderMaterial({
+    vertexShader: HAZE_VERT,
+    fragmentShader: HAZE_FRAG,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    blending: THREE.CustomBlending,
+    blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor,
+    blendDst: THREE.OneFactor,
+    uniforms: {
+      uColor: { value: halo },
+      uAlpha: { value: 0 },
+    },
+  })
+  const aura = new THREE.Mesh(auraGeo, auraMat)
+  aura.position.set(-0.1, -0.25, -0.9)
+  aura.renderOrder = -1
+  aura.frustumCulled = false
+  pivot.add(aura)
+
   const fb = buildField(
     tier.field,
     baseCamZ,
@@ -917,8 +943,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const pointerCur = { x: 9, y: 9 }
   const rect = { left: 0, top: 0, width: 1, height: 1 }
 
-  const materials = [starMat, lineMat, fieldMat]
-  const geometries = [starGeo, decorGeoStatic, decorGeoDrift, lineGeo, fieldGeo]
+  const materials = [starMat, lineMat, fieldMat, auraMat]
+  const geometries = [starGeo, decorGeoStatic, decorGeoDrift, lineGeo, fieldGeo, auraGeo]
   if (hazeMat) materials.push(hazeMat)
 
   const accentInk = new THREE.Color("#6a3bd4")
@@ -1096,6 +1122,9 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const sway = CONFIG.sway
   const swayYawW = THREE.MathUtils.degToRad(sway.yawDeg)
   const swayPitchW = THREE.MathUtils.degToRad(sway.pitchDeg)
+  const drift = CONFIG.drift
+  const driftYawW = THREE.MathUtils.degToRad(drift.yawDeg)
+  const driftPitchW = THREE.MathUtils.degToRad(drift.pitchDeg)
   const TWO_PI = Math.PI * 2
 
   const step = (dt: number) => {
@@ -1129,11 +1158,15 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
 
     let swayYaw = 0
     let swayPitch = 0
+    let driftYaw = 0
+    let driftPitch = 0
     if (!reduced && dt > 0) {
       swayYaw = Math.sin((time * TWO_PI) / sway.periodsSec[0]) * swayYawW
       swayPitch = Math.sin((time * TWO_PI) / sway.periodsSec[1]) * swayPitchW
+      driftYaw = Math.sin((time * TWO_PI) / drift.periodsSec[0]) * driftYawW
+      driftPitch = Math.sin((time * TWO_PI) / drift.periodsSec[1]) * driftPitchW
     }
-    pivot.rotation.set(drag.pitch + swayPitch, drag.yaw + swayYaw, 0)
+    pivot.rotation.set(drag.pitch + swayPitch + driftPitch, drag.yaw + swayYaw + driftYaw, 0)
     fieldPts.rotation.set(
       pivot.rotation.x * CONFIG.parallax.fieldFollow,
       pivot.rotation.y * CONFIG.parallax.fieldFollow,
@@ -1176,6 +1209,9 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
       hazeMat.uniforms.uAlpha.value =
         CONFIG.lighting.hazeAlpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.haze.periodSec)) * (1 - heroProgress)
     }
+
+    auraMat.uniforms.uAlpha.value =
+      CONFIG.aura.alpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.aura.periodSec)) * (1 - heroProgress)
 
     camera.position.x = hasPointer ? pointerCur.x * CONFIG.parallax.camera : 0
     camera.position.y = hasPointer ? -pointerCur.y * CONFIG.parallax.camera : 0
