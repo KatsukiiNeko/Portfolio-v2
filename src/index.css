@@ -14,7 +14,9 @@
   --color-foreground: var(--c-foreground);
   --color-foreground-muted: var(--c-foreground-muted);
   --color-border: var(--c-border);
+  --color-border-strong: var(--c-border-strong);
   --color-accent: var(--c-accent);
+  --color-accent-text: var(--c-accent-text);
   --color-accent-muted: var(--c-accent-muted);
 
   --text-display: clamp(2.5rem, 6vw, 4.5rem);
@@ -34,7 +36,10 @@
   --c-foreground: #e9e9ee;
   --c-foreground-muted: #9a9aa8;
   --c-border: rgba(255, 255, 255, 0.09);
+  /* 3:1 against the input surface, per WCAG 1.4.11 — hairlines above stay decorative. */
+  --c-border-strong: rgba(255, 255, 255, 0.33);
   --c-accent: #814de5;
+  --c-accent-text: #a47ef0;
   --c-accent-muted: rgba(129, 77, 229, 0.14);
 }
 
@@ -45,7 +50,9 @@
   --c-foreground: #14141a;
   --c-foreground-muted: #56566a;
   --c-border: rgba(0, 0, 0, 0.1);
+  --c-border-strong: rgba(0, 0, 0, 0.42);
   --c-accent: #6a3bd4;
+  --c-accent-text: #6a3bd4;
   --c-accent-muted: rgba(129, 77, 229, 0.1);
 }
 
