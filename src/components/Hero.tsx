@@ -3,7 +3,7 @@ import Button from "./Button"
 import Reveal from "./Reveal"
 import { profile } from "../data/profile"
 
-const HeroScene = lazy(() => import("../three/HeroScene"))
+const HeroScene = lazy(() => import("../three/HeroScene.tsx"))
 
 export default function Hero() {
   return (

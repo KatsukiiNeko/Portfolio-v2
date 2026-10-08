@@ -7,6 +7,7 @@
  */
 import { chromium } from "playwright"
 import { spawn } from "node:child_process"
+import { fileURLToPath } from "node:url"
 import { setTimeout as sleep } from "node:timers/promises"
 
 const PORT = 4173
@@ -16,7 +17,8 @@ const WIDTHS = [375, 390, 768, 1024, 1280, 1440]
 const server = spawn("npm", ["run", "preview"], {
   stdio: "ignore",
   detached: true,
-  cwd: new URL("..", import.meta.url).pathname,
+  shell: true, 
+  cwd: fileURLToPath(new URL("..", import.meta.url)), 
 })
 
 const checks = []
