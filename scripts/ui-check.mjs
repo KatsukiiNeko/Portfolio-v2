@@ -40,7 +40,7 @@ const browser = await chromium.launch()
 try {
   // ---- responsive + console health ----
   for (const width of WIDTHS) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    const page = await browser.newPage({ viewport: { width, height: 900 }, deviceScaleFactor: 2 })
     const errors = []
     page.on("console", m => m.type() === "error" && errors.push(m.text()))
     page.on("pageerror", e => errors.push(String(e)))
@@ -107,7 +107,9 @@ try {
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
     await page.goto(BASE, { waitUntil: "networkidle" })
-    await page.click('button[aria-label="Open details for Kaoruko Waguri"]')
+    // selectors are structural, not title-based: content edits must not break the gate
+    const firstCard = page.locator('button[aria-label^="Open details"]').first()
+    await firstCard.click()
     await page.waitForTimeout(400)
     const opened = await page.isVisible('[role="dialog"]')
     const focused = await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))
@@ -118,10 +120,15 @@ try {
     check("modal traps focus", focused)
     check("modal closes on Escape", closed)
 
-    await page.click('button:has-text("Design")')
+    const total = await page.locator("article").count()
+    await page.locator('[aria-label="Filter projects"] button').nth(1).click()
     await page.waitForTimeout(500)
     const filtered = await page.locator("article").count()
-    check("category filter works", filtered === 3, `cards=${filtered}`)
+    check(
+      "category filter narrows the grid",
+      filtered >= 1 && filtered < total,
+      `${filtered}/${total} cards`,
+    )
     await page.close()
   }
 
@@ -155,9 +162,102 @@ try {
             h: Math.round(r.height),
           }
         })
-        .filter(x => x.w < 40 || x.h < 40),
+        .filter(x => x.w < 44 || x.h < 44),
     )
-    check("mobile targets >= 40px", small.length === 0, JSON.stringify(small))
+    check("mobile targets >= 44px", small.length === 0, JSON.stringify(small))
+    await page.close()
+  }
+
+  // ---- real phone profile: dpr 3, touch input ----
+  {
+    const page = await browser.newPage({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 3,
+    })
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    await page.waitForTimeout(500)
+
+    const layout = await page.evaluate(() => {
+      const canvas = document.querySelector("canvas")
+      const tiny = [...document.querySelectorAll("p, li, span, a, dd, dt, h3, label")]
+        .filter(e => e.offsetParent !== null && e.textContent.trim())
+        .map(e => ({ t: e.textContent.trim().slice(0, 20), s: parseFloat(getComputedStyle(e).fontSize) }))
+        .filter(x => x.s < 12)
+      return {
+        overflow: document.documentElement.scrollWidth - innerWidth,
+        layoutW: innerWidth,
+        tiny,
+        touchAction: canvas ? getComputedStyle(canvas).touchAction : "none",
+      }
+    })
+    check(
+      "phone @dpr3 no horizontal overflow",
+      layout.overflow <= 1,
+      `overflow=${layout.overflow}, layoutWidth=${layout.layoutW}`,
+    )
+    check("phone: no text under 12px", layout.tiny.length === 0, JSON.stringify(layout.tiny.slice(0, 5)))
+    check("phone: canvas allows vertical pan", layout.touchAction === "pan-y", layout.touchAction)
+
+    // a touch swipe over the canvas must scroll like a swipe over normal content
+    const cdp = await page.context().newCDPSession(page)
+    const swipe = async el => {
+      await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }))
+      await page.waitForTimeout(300)
+      const start = await page.evaluate(() => scrollY)
+      const x = el.x + el.width / 2
+      const y = el.y + el.height / 2
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] })
+      for (let i = 1; i <= 8; i++) {
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x, y: y - i * 25 }] })
+        await new Promise(r => setTimeout(r, 25))
+      }
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] })
+      await page.waitForTimeout(600)
+      return Math.abs((await page.evaluate(() => scrollY)) - start)
+    }
+    const control = await swipe(await page.locator("#hero h1").boundingBox())
+    const overCanvas = await swipe(await page.locator("canvas").boundingBox())
+    check(
+      "phone: swipe over canvas scrolls the page",
+      control >= 40 && overCanvas >= control * 0.6,
+      `canvas=${overCanvas}px vs control=${control}px`,
+    )
+    await page.close()
+  }
+
+  // ---- landscape phone: menu reachable, hero does not swallow the screen ----
+  {
+    const page = await browser.newPage({
+      viewport: { width: 667, height: 375 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 3,
+    })
+    await page.goto(BASE, { waitUntil: "networkidle" })
+    await page.waitForTimeout(500)
+
+    const geo = await page.evaluate(() => ({
+      vh: innerHeight,
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      hero: Math.round(document.getElementById("hero").getBoundingClientRect().height),
+    }))
+    check("landscape: no horizontal overflow", geo.overflow <= 1, `overflow=${geo.overflow}`)
+    check("landscape: hero within 1.75 screens", geo.hero <= geo.vh * 1.75, `${geo.hero}/${geo.vh}px`)
+
+    await page.click('button[aria-label="Toggle navigation menu"]')
+    await page.waitForTimeout(300)
+    const menu = await page.evaluate(() => {
+      const el = document.getElementById("mobile-menu")
+      const r = el.getBoundingClientRect()
+      return { open: !el.hidden && r.height > 0, bottom: Math.round(r.bottom), vh: innerHeight }
+    })
+    check(
+      "landscape: every menu link reachable",
+      menu.open && menu.bottom <= menu.vh + 1,
+      `bottom=${menu.bottom} vh=${menu.vh}`,
+    )
     await page.close()
   }
 

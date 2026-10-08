@@ -102,11 +102,15 @@ Animation respects `prefers-reduced-motion` (via `MotionConfig` and the scene's 
 
 `npm run check:ui` starts `vite preview`, drives headless Chromium and asserts:
 
-- no horizontal overflow and a clean console at 375 / 390 / 768 / 1024 / 1280 / 1440
+- no horizontal overflow and a clean console at 375 / 390 / 768 / 1024 / 1280 / 1440, at device pixel ratio 2
+- a real phone profile (dpr 3, touch input): layout width matches the device, no text under 12px,
+  canvas `touch-action: pan-y`, and a touch swipe over the hero canvas scrolling the page exactly
+  like a control swipe over the heading
+- a landscape phone (667x375): no overflow, every mobile-menu link reachable, hero within 1.75 screens
 - no broken images or 4xx/5xx responses
 - project modal opens, traps focus, closes on Escape
 - category filtering, theme persistence, nav collapse breakpoints
-- mobile touch targets >= 40px, skip link is the first tab stop
+- mobile touch targets >= 44px, skip link is the first tab stop
 
 ## Deployment
 
