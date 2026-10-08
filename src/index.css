@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* Attribute-driven theme (preserves the existing data-theme + localStorage contract). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme inline {
+  --font-display: "Syne", ui-sans-serif, sans-serif;
+  --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-background: var(--c-background);
+  --color-surface: var(--c-surface);
+  --color-surface-elevated: var(--c-surface-elevated);
+  --color-foreground: var(--c-foreground);
+  --color-foreground-muted: var(--c-foreground-muted);
+  --color-border: var(--c-border);
+  --color-accent: var(--c-accent);
+  --color-accent-muted: var(--c-accent-muted);
+
+  --text-display: clamp(2.5rem, 6vw, 4.5rem);
+  --text-section: clamp(1.75rem, 3.4vw, 2.625rem);
+  --text-lead: clamp(1rem, 1.6vw, 1.125rem);
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root {
+  --c-background: #0b0b0d;
+  --c-surface: #131317;
+  --c-surface-elevated: #1a1a1f;
+  --c-foreground: #e9e9ee;
+  --c-foreground-muted: #9a9aa8;
+  --c-border: rgba(255, 255, 255, 0.09);
+  --c-accent: #814de5;
+  --c-accent-muted: rgba(129, 77, 229, 0.14);
+}
+
+[data-theme="light"] {
+  --c-background: #f5f4f8;
+  --c-surface: #ffffff;
+  --c-surface-elevated: #ffffff;
+  --c-foreground: #14141a;
+  --c-foreground-muted: #56566a;
+  --c-border: rgba(0, 0, 0, 0.1);
+  --c-accent: #6a3bd4;
+  --c-accent-muted: rgba(129, 77, 229, 0.1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--c-background);
+    color: var(--c-foreground);
+    font-family: var(--font-sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    transition:
+      background-color 0.3s var(--ease-standard),
+      color 0.3s var(--ease-standard);
+  }
+
+  ::selection {
+    background: var(--c-accent);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+  }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
