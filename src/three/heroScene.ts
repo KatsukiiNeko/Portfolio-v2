@@ -863,27 +863,46 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     root.add(haze)
   }
 
-  const auraGeo = new THREE.PlaneGeometry(5.0, 4.6)
-  const auraMat = new THREE.ShaderMaterial({
-    vertexShader: HAZE_VERT,
-    fragmentShader: HAZE_FRAG,
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    blending: THREE.CustomBlending,
-    blendEquation: THREE.AddEquation,
-    blendSrc: THREE.OneFactor,
-    blendDst: THREE.OneFactor,
-    uniforms: {
-      uColor: { value: halo },
-      uAlpha: { value: 0 },
-    },
-  })
-  const aura = new THREE.Mesh(auraGeo, auraMat)
-  aura.position.set(-0.1, -0.25, -0.9)
-  aura.renderOrder = -1
-  aura.frustumCulled = false
-  pivot.add(aura)
+  const auraLobes: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial; x: number; y: number; alpha: number; driftR: number; driftPeriod: number; phase: number }[] = []
+  const auraGeos: THREE.BufferGeometry[] = []
+  const auraMats: THREE.ShaderMaterial[] = []
+  const mkAuraLobe = (
+    size: [number, number],
+    pos: [number, number, number],
+    color: THREE.Color,
+    alpha: number,
+    driftR: number,
+    driftPeriod: number,
+    phase: number,
+  ) => {
+    const geo = new THREE.PlaneGeometry(size[0], size[1])
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: HAZE_VERT,
+      fragmentShader: HAZE_FRAG,
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneFactor,
+      blendDst: THREE.OneFactor,
+      uniforms: {
+        uColor: { value: color },
+        uAlpha: { value: alpha },
+      },
+    })
+    const mesh = new THREE.Mesh(geo, mat)
+    mesh.position.set(pos[0], pos[1], pos[2])
+    mesh.renderOrder = -1
+    mesh.frustumCulled = false
+    root.add(mesh)
+    auraLobes.push({ mesh, mat, x: pos[0], y: pos[1], alpha, driftR, driftPeriod, phase })
+    auraGeos.push(geo)
+    auraMats.push(mat)
+  }
+
+  mkAuraLobe([5.0, 4.6], [-0.1, -0.25, -0.9], halo, 0.05, 0.35, 38, 0)
+  mkAuraLobe([3.4, 3.0], [0.9, 0.6, -1.3], violetDeep, 0.035, 0.5, 53, 2.1)
 
   const fb = buildField(
     tier.field,
@@ -943,8 +962,8 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   const pointerCur = { x: 9, y: 9 }
   const rect = { left: 0, top: 0, width: 1, height: 1 }
 
-  const materials = [starMat, lineMat, fieldMat, auraMat]
-  const geometries = [starGeo, decorGeoStatic, decorGeoDrift, lineGeo, fieldGeo, auraGeo]
+  const materials = [starMat, lineMat, fieldMat, ...auraMats]
+  const geometries = [starGeo, decorGeoStatic, decorGeoDrift, lineGeo, fieldGeo, ...auraGeos]
   if (hazeMat) materials.push(hazeMat)
 
   const accentInk = new THREE.Color("#6a3bd4")
@@ -1210,8 +1229,16 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
         CONFIG.lighting.hazeAlpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.haze.periodSec)) * (1 - heroProgress)
     }
 
-    auraMat.uniforms.uAlpha.value =
-      CONFIG.aura.alpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.aura.periodSec)) * (1 - heroProgress)
+    for (const lobe of auraLobes) {
+      const a = (time * TWO_PI) / lobe.driftPeriod + lobe.phase
+      lobe.mesh.position.set(
+        lobe.x + Math.cos(a) * lobe.driftR,
+        lobe.y + Math.sin(a * 0.7) * lobe.driftR * 0.6,
+        lobe.mesh.position.z,
+      )
+      lobe.mat.uniforms.uAlpha.value =
+        lobe.alpha * (1 + CONFIG.haze.wob * Math.sin((time * TWO_PI) / CONFIG.aura.periodSec + lobe.phase)) * (1 - heroProgress)
+    }
 
     camera.position.x = hasPointer ? pointerCur.x * CONFIG.parallax.camera : 0
     camera.position.y = hasPointer ? -pointerCur.y * CONFIG.parallax.camera : 0
