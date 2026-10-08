@@ -25,6 +25,8 @@ node_modules/
 .env.*
 .env.local
 .env.*.local
+# keep the committed template if one is ever added (must follow .env.*)
+!.env.example
 *.key
 *.pem
 *.p12
@@ -61,10 +63,14 @@ models/
 # AI TOOLS / AGENTS
 # =========================
 .openclaude/
-.claude/cache/
-.claude/tmp/
-.claude/logs/
-.claude/sessions/
+.claude/
+.opencode/
+.mcp.json
+.ignore
+.cursor/
+.windsurf/
+.continue/
+.codeium/
 CLAUDE.md
 .cursorrules
 .aider*
@@ -77,3 +83,6 @@ copilot-instructions.md
 memory/*.json
 memory/*.log
 
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
