@@ -50,7 +50,7 @@ export const projects: Project[] = [
     description:
       "Basalt is a clean recode of the Money Vault financial tracker. This fork strips out unnecessary complexity, reorganizes the logic, and prioritizes readable, well-structured code that's easy to follow and modify. ",
     githubUrl: "https://github.com/KatsukiiNeko/Personal-financial-managment",
-    liveUrl: "basalt-finance.vercel.app/",
+    liveUrl: "https://basalt-finance.vercel.app/",
   },
   {
     id: 5,
