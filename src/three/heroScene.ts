@@ -91,6 +91,7 @@ const CONFIG = {
 
   drag: {
     sensitivity: 1.0,
+    follow: 9.0,
     maxYaw: 70,
     maxPitch: 35,
     friction: 3.5,
@@ -1172,8 +1173,9 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     }
     drag.rawYaw = Math.max(-maxY * 1.6, Math.min(maxY * 1.6, drag.rawYaw))
     drag.rawPitch = Math.max(-maxP * 1.6, Math.min(maxP * 1.6, drag.rawPitch))
-    drag.yaw = softClamp(drag.rawYaw, maxY)
-    drag.pitch = softClamp(drag.rawPitch, maxP)
+    const followEase = 1 - Math.exp(-c.follow * dt)
+    drag.yaw += (softClamp(drag.rawYaw, maxY) - drag.yaw) * followEase
+    drag.pitch += (softClamp(drag.rawPitch, maxP) - drag.pitch) * followEase
 
     let swayYaw = 0
     let swayPitch = 0
