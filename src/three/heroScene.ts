@@ -622,10 +622,10 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
     renderer = new THREE.WebGLRenderer({
       alpha: true,
       premultipliedAlpha: true,
-      antialias: false,
+      antialias: true,
       powerPreference: "high-performance",
-      stencil: false,
-      depth: false,
+      stencil: true,
+      depth: true,
     })
   } catch {
     return null // WebGL unavailable → CSS fallback, page unaffected
@@ -636,6 +636,7 @@ export function initHeroThree(host: HTMLElement): HeroThree | null {
   canvas.style.position = "absolute"
   canvas.style.inset = "0"
   canvas.style.zIndex = "-1" // behind hero text; -1 only works if #hero isolates
+  canvas.style.touchAction = "pan-y"
   canvas.style.display = "block"
   host.style.touchAction = "pan-y" // vertical touch gestures must scroll the page
   heroEl.style.isolation = "isolate" // own stacking context → canvas stays above body bg, below content
