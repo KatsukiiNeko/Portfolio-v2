@@ -8,12 +8,10 @@ export const profile = {
   displayName: "Katsukii Neko",
   fullName: "Nguyen Phuong Minh Tan",
   roles: ["Graphic Design", "Python Development", "Web Development"],
-  /** Known from the existing site. Add district/street here only if you ever want it public. */
   location: "Vietnam",
-  /** Not present anywhere in the old site — fill in or delete this entry. */
-  dateOfBirth: "[Date of birth: add]",
+  dateOfBirth: "14/10/2008",
   intro:
-    "My name is Nguyen Phuong Minh Tan, and I am a high school student from Vietnam with a passion for technology and creativity. As a senior Python and web developer, I create efficient and innovative solutions. I also have experience as a graphic designer, video editor, and colorist, blending technical and artistic skills into my projects.",
+    "My name is Nguyen Phuong Minh Tan, and I am a high school student from Vietnam with a passion for technology and creativity. As a junior Python and web developer, I create efficient and innovative solutions. I also have experience as a graphic designer, video editor, and colorist, blending technical and artistic skills into my projects.",
   socials: [
     {
       label: "LinkedIn",

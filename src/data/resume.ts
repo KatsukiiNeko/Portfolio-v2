@@ -20,10 +20,15 @@ export interface NamedEntry {
 
 export const education: TimelineEntry[] = [
   {
-    period: "[Start - present]",
+    period: "2023-2026",
     title: "High school student",
-    place: "[School name: add]",
-    note: "Known from the existing site: a high school student from Vietnam. Add the school and dates when you want them public.",
+    place: "An Khanh High school",
+  },
+
+  {
+    period: "2026-2032",
+    title: "College student",
+    place: "Can Tho university — College of Information and Communication Technology CTU ",
   },
 ]
 
@@ -49,8 +54,8 @@ export const expertise: ExpertiseGroup[] = [
 
 export const achievements: NamedEntry[] = [
   {
-    title: "[Achievement: add]",
-    detail: "[Award, certification, competition result or academic accomplishment]",
+    title: " Attend in city-level excellent student in Physics ",
+    detail: "consolation prize",
   },
 ]
 
@@ -58,5 +63,4 @@ export const interests: NamedEntry[] = [
   { title: "Technology", detail: "A passion for technology and creativity." },
   { title: "Graphic design", detail: "Posters, banners and visual composition." },
   { title: "Video editing", detail: "Editing and color grading." },
-  { title: "[Interest: add]", detail: "[Hobby, creative or personal interest]" },
 ]

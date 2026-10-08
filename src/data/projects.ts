@@ -14,7 +14,7 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: 1,
-    title: "Kaoruko Waguri",
+    title: "Anime Banner Design — Kaoruko Waguri",
     category: "design",
     image: "/assets/images/Kaoru.webp",
     tags: ["Anime", "Photoshop", "Illustrator"],
@@ -23,7 +23,7 @@ export const projects: Project[] = [
   },
   {
     id: 2,
-    title: "Shiina Mahiru",
+    title: "Anime Banner Design — Shiina Mahiru",
     category: "design",
     image: "/assets/images/shiina.webp",
     tags: ["Anime", "Illustrator", "Banner"],
@@ -43,18 +43,18 @@ export const projects: Project[] = [
   },
   {
     id: 4,
-    title: "Money Vault",
+    title: " Basalt",
     category: "web",
-    image: "/assets/images/opensource-PFM.webp",
+    image: "/assets/images/basalt.webp",
     tags: ["web", "react", "DB"],
     description:
-      "Money Vault is a privacy-focused personal finance tracker built as an offline-first PWA. It stores all data locally on the device and uses encryption to protect sensitive information. Its purpose is to give users a simple, secure way to manage income and expenses without relying on external servers or cloud services.",
+      "Basalt is a clean recode of the Money Vault financial tracker. This fork strips out unnecessary complexity, reorganizes the logic, and prioritizes readable, well-structured code that's easy to follow and modify. ",
     githubUrl: "https://github.com/KatsukiiNeko/Personal-financial-managment",
-    liveUrl: "https://money-vaults.vercel.app/",
+    liveUrl: "basalt-finance.vercel.app/",
   },
   {
     id: 5,
-    title: "Umi Asanagi",
+    title: "Wallpapper Anime Design — umi Asanagi",
     category: "design",
     image: "/assets/images/Umi_Asanagi.webp",
     tags: ["Photoshop", "Illustrator", "Banner"],
