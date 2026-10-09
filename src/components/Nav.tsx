@@ -63,8 +63,14 @@ export default function Nav() {
       >
         <a
           href="#top"
-          className="py-2 font-display text-lg font-extrabold tracking-tight text-foreground"
+          className="flex items-center gap-2.5 py-2 font-display text-lg font-extrabold tracking-tight text-foreground"
         >
+          <img
+            src="/assets/images/libra-icon.svg"
+            alt=""
+            aria-hidden="true"
+            className="size-7"
+          />
           Katsukii Neko
         </a>
 

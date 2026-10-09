@@ -43,9 +43,20 @@ export default function Hero() {
         </div>
 
         <div className="flex min-w-0 justify-center lg:justify-end">
-          <Suspense fallback={null}>
-            <HeroScene />
-          </Suspense>
+          <div className="flex w-full max-w-md flex-col items-center gap-5">
+            <Suspense fallback={null}>
+              <HeroScene />
+            </Suspense>
+            <div className="flex flex-col items-center gap-2">
+              <img
+                src="/assets/images/libra-icon.svg"
+                alt=""
+                aria-hidden="true"
+                className="size-10"
+              />
+              <span className="font-serif text-xl text-foreground-muted">Libra</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

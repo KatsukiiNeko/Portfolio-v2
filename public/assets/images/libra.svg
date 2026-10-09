@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" role="img" aria-label="Libra zodiac artwork: glyph, constellation stick figure and stars">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#814de5" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#814de5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="iconGlow" cx="50%" cy="47%" r="55%">
+      <stop offset="0" stop-color="#814de5" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#814de5" stop-opacity="0"/>
+    </radialGradient>
+    <g id="corner">
+      <path d="M0 28 V0 H28" fill="none" stroke="#a47ef0" stroke-opacity="0.6" stroke-width="2"/>
+    </g>
+  </defs>
+
+  <rect width="1200" height="900" fill="#0b0b0d"/>
+
+  <!-- presentation frame with corner ticks -->
+  <rect x="28" y="28" width="1144" height="844" fill="none" stroke="#ffffff" stroke-opacity="0.09"/>
+  <use href="#corner" x="28" y="28"/>
+  <use href="#corner" x="1172" y="28" transform="rotate(90 1172 28)"/>
+  <use href="#corner" x="1172" y="872" transform="rotate(180 1172 872)"/>
+  <use href="#corner" x="28" y="872" transform="rotate(270 28 872)"/>
+
+  <!-- header -->
+  <text x="80" y="96" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="6">ZODIAC — 07</text>
+  <line x1="80" y1="116" x2="560" y2="116" stroke="#ffffff" stroke-opacity="0.09"/>
+
+  <!-- glyph -->
+  <ellipse cx="320" cy="440" rx="270" ry="210" fill="url(#glow)"/>
+  <g transform="translate(150 283.6) scale(3.4)" fill="none" stroke="#e9e9ee" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 44 H32 A18 18 0 0 1 68 44 H86"/>
+    <path d="M14 66 H86"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="80" y="706" fill="#e9e9ee" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="96" font-weight="800" letter-spacing="4">LIBRA</text>
+  <text x="84" y="748" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="15" font-weight="500" letter-spacing="5">THE SCALES · SEP 23 — OCT 22</text>
+  <text x="84" y="796" fill="#a47ef0" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-style="italic">Balance is a practice.</text>
+
+  <!-- constellation panel -->
+  <rect x="660" y="140" width="480" height="500" fill="none" stroke="#ffffff" stroke-opacity="0.09"/>
+  <text x="684" y="176" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="3">STICK FIGURE — IAU</text>
+
+  <path d="M746 333 L835 291 L926 180 L1054 318 L985 505 L835 291" fill="none" stroke="#e9e9ee" stroke-opacity="0.45" stroke-width="1.5"/>
+
+  <!-- background field stars (mag &lt; 5, no lines) -->
+  <circle cx="834" cy="565" r="3" fill="#9a9aa8" opacity="0.6"/>
+  <circle cx="827" cy="600" r="3" fill="#9a9aa8" opacity="0.6"/>
+
+  <!-- primary stars, sized by magnitude -->
+  <circle cx="746" cy="333" r="2.8" fill="#e9e9ee"/>
+  <circle cx="835" cy="291" r="3.2" fill="#e9e9ee"/>
+  <circle cx="926" cy="180" r="5.5" fill="#e9e9ee"/>
+  <circle cx="926" cy="180" r="11" fill="none" stroke="#e9e9ee" stroke-opacity="0.3"/>
+  <circle cx="1054" cy="318" r="5" fill="#e9e9ee"/>
+  <circle cx="1054" cy="318" r="10" fill="none" stroke="#e9e9ee" stroke-opacity="0.3"/>
+  <circle cx="985" cy="505" r="4" fill="#e9e9ee"/>
+
+  <!-- star labels -->
+  <text x="946" y="178" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13">Zubeneschamali</text>
+  <text x="1036" y="302" text-anchor="end" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13">Zubenelgenubi</text>
+  <text x="998" y="521" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13">Brachium</text>
+
+  <!-- signature icon below the star figure -->
+  <g transform="translate(845 672) scale(0.2148)">
+    <rect width="512" height="512" rx="96" fill="#131317"/>
+    <rect x="0.75" y="0.75" width="510.5" height="510.5" rx="95.25" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.5"/>
+    <ellipse cx="256" cy="240" rx="195" ry="155" fill="url(#iconGlow)"/>
+    <g transform="translate(47.6 64.2) scale(4.17)" fill="none" stroke="#a47ef0" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 44 H32 A18 18 0 0 1 68 44 H86"/>
+      <path d="M14 66 H86"/>
+    </g>
+  </g>
+
+  <!-- footer -->
+  <text x="80" y="840" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="4">KATSUKII NEKO — PORTFOLIO</text>
+  <text x="1120" y="840" text-anchor="end" fill="#9a9aa8" font-family="'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="600" letter-spacing="4">SIGN 07 / LIBRA</text>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Libra signature icon">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="47%" r="55%">
+      <stop offset="0" stop-color="#814de5" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#814de5" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#131317"/>
+  <rect x="0.75" y="0.75" width="510.5" height="510.5" rx="95.25" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.5"/>
+  <ellipse cx="256" cy="240" rx="195" ry="155" fill="url(#glow)"/>
+  <g transform="translate(47.6 64.2) scale(4.17)" fill="none" stroke="#a47ef0" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 44 H32 A18 18 0 0 1 68 44 H86"/>
+    <path d="M14 66 H86"/>
+  </g>
+</svg>
